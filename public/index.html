@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rabbit Research for Authors</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- React 18 + Babel Standalone (JSX without a build step) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { background: #f5f1ea; font-family: Georgia, 'Times New Roman', serif; }
+    #root { min-height: 100vh; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up    { animation: fadeUp 0.45s ease; }
+    .sprint-card { animation: fadeUp 0.4s ease; }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #1e3a2f !important;
+      box-shadow: 0 0 0 2px rgba(30,58,47,0.12) !important;
+    }
+    button:focus-visible { outline: 2px solid #1e3a2f; outline-offset: 2px; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f5f1ea; }
+    ::-webkit-scrollbar-thumb { background: #c8b99a; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // ── Colour palette ────────────────────────────────────────────────────────
+    const C = {
+      bg:          "#f5f1ea",
+      paper:       "#fdfaf5",
+      green:       "#1e3a2f",
+      greenDark:   "#142a22",
+      amber:       "#b5712a",
+      text:        "#2a1f14",
+      textMid:     "#5c4a35",
+      textLight:   "#8c7860",
+      border:      "#d4c5ae",
+      borderLight: "#e8ddd0",
+      card:        "#fffdf8",
+      red:         "#8b3a3a",
+      flagBg:      "#fdf5f2",
+    };
+
+    // ── Session helpers ───────────────────────────────────────────────────────
+    const SESSION_KEY  = "pa_session";
+    const getSession   = ()  => localStorage.getItem(SESSION_KEY);
+    const clearSession = ()  => localStorage.removeItem(SESSION_KEY);
+
+    // ── Authenticated API call ────────────────────────────────────────────────
+    async function apiPost(path, body) {
+      const res = await fetch(path, {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${getSession()}`,
+        },
+        body: JSON.stringify(body),
+      });
+      if (res.status === 401) {
+        const err = new Error("AUTH_REQUIRED");
+        err.code  = "AUTH_REQUIRED";
+        throw err;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Request failed.");
+      return data;
+    }
+
+    // ── AIFAC Logo ────────────────────────────────────────────────────────────
+    function AifacLogo({ size = 32 }) {
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="50" fill="#1a5c35" />
+          <path d="M49,62 Q22,58 20,28 L26,27 Q27,55 49,58 Z" fill="white" opacity="0.5" />
+          <path d="M49,62 Q24,57 22,26 L27,25 Q28,54 49,58 Z" fill="white" opacity="0.55" />
+          <path d="M49,62 Q26,56 24,24 L29,23 Q30,53 49,58 Z" fill="white" opacity="0.6" />
+          <path d="M49,62 Q28,55 28,22 L49,22 Z" fill="white" />
+          <path d="M51,62 Q78,58 80,28 L74,27 Q73,55 51,58 Z" fill="white" opacity="0.5" />
+          <path d="M51,62 Q76,57 78,26 L73,25 Q72,54 51,58 Z" fill="white" opacity="0.55" />
+          <path d="M51,62 Q74,56 76,24 L71,23 Q70,53 51,58 Z" fill="white" opacity="0.6" />
+          <path d="M51,62 Q72,55 72,22 L51,22 Z" fill="white" />
+          <path d="M47,62 Q50,65 53,62 L51,22 L49,22 Z" fill="white" />
+          <text x="38" y="48" fontFamily="Georgia,serif" fontSize="17" fontWeight="700"
+            fill="#1a5c35" textAnchor="middle">ai</text>
+        </svg>
+      );
+    }
+
+    // ── Auth Gate ─────────────────────────────────────────────────────────────
+    function AuthGate() {
+      const [email,   setEmail]   = useState("");
+      const [sent,    setSent]    = useState(false);
+      const [loading, setLoading] = useState(false);
+      const [error,   setError]   = useState("");
+
+      const linkExpired =
+        new URLSearchParams(window.location.search).get("auth_error") === "link_expired";
+
+      const requestLink = async () => {
+        if (!email.trim() || loading) return;
+        setLoading(true); setError("");
+        try {
+          const res  = await fetch("/api/auth/request", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ email }),
+          });
+          const data = await res.json();
+          if (data.ok) { setSent(true); }
+          else { setError("Something went wrong. Please try again."); }
+        } catch {
+          setError("Something went wrong. Please try again.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const gateWrap = {
+        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        background: `linear-gradient(150deg, ${C.green} 0%, ${C.greenDark} 100%)`,
+      };
+      const card = {
+        background: C.paper, borderRadius: "4px", padding: "52px 44px",
+        maxWidth: "400px", width: "90%", textAlign: "center",
+        boxShadow: "0 24px 64px rgba(0,0,0,0.35)",
+      };
+      const inp = {
+        width: "100%", padding: "13px 16px", border: `1px solid ${C.border}`,
+        borderRadius: "3px", fontFamily: "Georgia,serif", fontSize: "16px",
+        color: C.text, background: "#fff",
+      };
+
+      if (sent) return (
+        <div style={gateWrap}>
+          <div className="fade-up" style={card}>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>📬</div>
+            <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
+              fontSize: "24px", fontWeight: "700", color: C.green, marginBottom: "12px" }}>
+              Check your inbox
+            </div>
+            <div style={{ fontSize: "15px", color: C.textMid, lineHeight: "1.7", marginBottom: "24px" }}>
+              We've sent a sign-in link to <strong>{email}</strong>.<br />
+              Click it to access Rabbit Research. The link expires in 15 minutes.
+            </div>
+            <button onClick={() => { setSent(false); setEmail(""); }}
+              style={{ fontSize: "14px", color: C.textLight, background: "none",
+                border: "none", cursor: "pointer", textDecoration: "underline" }}>
+              Use a different email
+            </button>
+          </div>
+        </div>
+      );
+
+      return (
+        <div style={gateWrap}>
+          <div className="fade-up" style={card}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center",
+              gap: "14px", marginBottom: "10px" }}>
+              <AifacLogo size={52} />
+              <span style={{ fontSize: "52px", lineHeight: 1 }}>🐇</span>
+            </div>
+            <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
+              fontSize: "30px", fontWeight: "700", color: C.green, letterSpacing: "-0.01em" }}>
+              Rabbit Research
+            </div>
+            <div style={{ fontSize: "15px", color: C.textLight, fontStyle: "italic",
+              marginBottom: "36px", marginTop: "6px" }}>
+              AI research assistant for fiction writers
+            </div>
+
+            {linkExpired && (
+              <div style={{ background: "#fdf5f2", border: "1px solid #e0c0b8", borderRadius: "3px",
+                padding: "12px 14px", marginBottom: "20px", fontSize: "14px",
+                color: C.red, textAlign: "left" }}>
+                Your sign-in link has expired. Please request a new one below.
+              </div>
+            )}
+
+            <div style={{ textAlign: "left", marginBottom: "20px" }}>
+              <label style={{ display: "block", fontSize: "13px", letterSpacing: "0.08em",
+                textTransform: "uppercase", color: C.textMid, marginBottom: "8px" }}>
+                Your email address
+              </label>
+              <input style={inp} type="email" placeholder="you@example.com"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError(""); }}
+                onKeyDown={e => e.key === "Enter" && requestLink()}
+              />
+              {error && (
+                <div style={{ color: C.red, fontSize: "14px", fontStyle: "italic", marginTop: "6px" }}>
+                  {error}
+                </div>
+              )}
+            </div>
+
+            <button onClick={requestLink} disabled={loading || !email.trim()}
+              style={{ width: "100%", padding: "14px", borderRadius: "3px", border: "none",
+                background: loading || !email.trim() ? "#8aaa96" : C.green,
+                color: "#fff", fontFamily: "Georgia,serif", fontSize: "16px",
+                cursor: loading || !email.trim() ? "default" : "pointer",
+                letterSpacing: "0.04em" }}>
+              {loading ? "Sending link…" : "Send sign-in link"}
+            </button>
+
+            <div style={{ marginTop: "24px", fontSize: "12px", color: C.textLight,
+              letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              An AI for Authors Circle Member Tool
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Helper components ─────────────────────────────────────────────────────
+    function SectionBlock({ label, color, children }) {
+      return (
+        <div style={{ marginTop: "16px" }}>
+          <div style={{ fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase",
+            color, marginBottom: "7px", fontFamily: "Georgia,serif", fontWeight: "700" }}>
+            {label}
+          </div>
+          {children}
+        </div>
+      );
+    }
+
+    function Toggle({ value, onChange, labelOn, labelOff, descOn, descOff, large }) {
+      const sz = large
+        ? { w: "38px", h: "22px", thumb: "16px", top: "3px", on: "19px" }
+        : { w: "36px", h: "20px", thumb: "14px", top: "3px", on: "16px" };
+      return (
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+          <div onClick={onChange} style={{ width: sz.w, height: sz.h, borderRadius: "11px",
+            background: value ? C.green : "#d4c5ae", cursor: "pointer",
+            position: "relative", transition: "background 0.2s", flexShrink: 0, marginTop: "2px" }}>
+            <div style={{ position: "absolute", top: sz.top, left: value ? sz.on : "3px",
+              width: sz.thumb, height: sz.thumb, borderRadius: "50%", background: "#fff",
+              transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.25)" }} />
+          </div>
+          <div onClick={onChange} style={{ cursor: "pointer" }}>
+            <div style={{ fontSize: large ? "15px" : "13px", color: C.text,
+              marginBottom: (descOn || descOff) ? "3px" : 0 }}>
+              {value ? labelOn : labelOff}
+            </div>
+            {(descOn || descOff) && (
+              <div style={{ fontSize: "13px", color: C.textLight, fontStyle: "italic" }}>
+                {value ? descOn : descOff}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ── Markdown renderer (for research report modal) ─────────────────────────
+    function inlineMarkdown(text) {
+      const parts = []; const re = /(\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_)/g;
+      let last = 0, m;
+      while ((m = re.exec(text)) !== null) {
+        if (m.index > last) parts.push(text.slice(last, m.index));
+        if (m[2]) parts.push(<strong key={m.index}>{m[2]}</strong>);
+        else      parts.push(<em key={m.index}>{m[3] || m[4]}</em>);
+        last = m.index + m[0].length;
+      }
+      if (last < text.length) parts.push(text.slice(last));
+      return parts;
+    }
+
+    function RenderMarkdown({ text }) {
+      const lines = text.split("\n"); const els = []; let i = 0;
+      while (i < lines.length) {
+        const l = lines[i];
+        if (/^## (.+)/.test(l)) {
+          els.push(<h2 key={i} style={{ fontFamily:"Palatino Linotype,Palatino,Georgia,serif",
+            fontSize:"20px", color:C.green, margin:"24px 0 8px", fontWeight:"700" }}>
+            {inlineMarkdown(l.replace(/^## /,""))}</h2>);
+        } else if (/^# (.+)/.test(l)) {
+          els.push(<h1 key={i} style={{ fontFamily:"Palatino Linotype,Palatino,Georgia,serif",
+            fontSize:"26px", color:C.green, margin:"0 0 6px", fontWeight:"700" }}>
+            {inlineMarkdown(l.replace(/^# /,""))}</h1>);
+        } else if (/^---+$/.test(l.trim())) {
+          els.push(<hr key={i} style={{ border:"none", borderTop:`1px solid ${C.borderLight}`, margin:"20px 0" }} />);
+        } else if (/^[-*] (.+)/.test(l)) {
+          const items = [];
+          while (i < lines.length && /^[-*] (.+)/.test(lines[i])) {
+            items.push(<li key={i} style={{ marginBottom:"5px" }}>
+              {inlineMarkdown(lines[i].replace(/^[-*] /,""))}</li>);
+            i++;
+          }
+          els.push(<ul key={"ul"+i} style={{ paddingLeft:"20px", margin:"6px 0 10px",
+            fontSize:"15px", color:C.textMid, lineHeight:"1.75" }}>{items}</ul>);
+          continue;
+        } else if (l.trim() === "") {
+          els.push(<div key={i} style={{ height:"6px" }} />);
+        } else {
+          els.push(<p key={i} style={{ margin:"0 0 10px", fontSize:"15px",
+            color:C.textMid, lineHeight:"1.8" }}>{inlineMarkdown(l)}</p>);
+        }
+        i++;
+      }
+      return <>{els}</>;
+    }
+
+    // ── App Header ────────────────────────────────────────────────────────────
+    function Header({ ctx, onChangeContext, onSignOut, showContext }) {
+      return (
+        <div style={{ background: C.green, padding: showContext ? "14px 28px" : "16px 32px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.18)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <AifacLogo size={32} />
+            <span style={{ fontSize: showContext ? "26px" : "24px" }}>🐇</span>
+            <div>
+              <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
+                fontSize: showContext ? "20px" : "22px", fontWeight: "700",
+                color: "#fff", lineHeight: 1.2 }}>
+                Rabbit Research
+              </div>
+              {showContext && (
+                <div style={{ display: "flex", gap: "8px", marginTop: "4px", flexWrap: "wrap" }}>
+                  {[ctx.genre, ctx.period, ctx.setting].filter(Boolean).map((v, i) => (
+                    <span key={i} style={{ fontSize: "12px", color: "rgba(255,255,255,0.85)",
+                      background: "rgba(255,255,255,0.12)", padding: "2px 10px", borderRadius: "20px" }}>
+                      {v}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            {onChangeContext && (
+              <button onClick={onChangeContext}
+                style={{ background: "rgba(255,255,255,0.15)", color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.25)", borderRadius: "3px",
+                  fontFamily: "Georgia,serif", fontSize: "13px", cursor: "pointer", padding: "7px 14px" }}>
+                Change Context
+              </button>
+            )}
+            <button onClick={onSignOut}
+              style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.75)",
+                border: "1px solid rgba(255,255,255,0.18)", borderRadius: "3px",
+                fontFamily: "Georgia,serif", fontSize: "13px", cursor: "pointer", padding: "7px 14px" }}>
+              Sign out
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Research Rabbit Main App ──────────────────────────────────────────────
+    function ResearchRabbit({ onSignOut }) {
+      const [screen,         setScreen]         = useState("setup");
+      const [ctx,            setCtx]            = useState({ genre:"", period:"", setting:"", premise:"" });
+      const [sprintTopic,    setSprintTopic]    = useState("");
+      const [sprints,        setSprints]        = useState([]);
+      const [loading,        setLoading]        = useState(false);
+      const [summaryLoading, setSummaryLoading] = useState(false);
+      const [summary,        setSummary]        = useState("");
+      const [showSummary,    setShowSummary]    = useState(false);
+      const [err,            setErr]            = useState("");
+      const [reportCopied,   setReportCopied]   = useState(false);
+      const [cardCopied,     setCardCopied]     = useState(null);
+      const [useWebSearch,   setUseWebSearch]   = useState(false);
+
+      const handleAuthError = () => { clearSession(); onSignOut(); };
+
+      // ── Run a sprint ────────────────────────────────────────────────────────
+      const runSprint = async () => {
+        if (!sprintTopic.trim() || loading) return;
+        setLoading(true); setErr("");
+        const novelCtx = `Genre: ${ctx.genre} | Period: ${ctx.period} | Setting: ${ctx.setting}${ctx.premise ? ` | Premise: ${ctx.premise}` : ""}`;
+        try {
+          const data   = await apiPost("/api/sprint", { topic: sprintTopic, novelCtx, useWebSearch });
+          const parsed = JSON.parse(data.result.replace(/```json|```/g, "").trim());
+          setSprints(prev => [...prev, {
+            id:          Date.now(),
+            topic:       sprintTopic,
+            data:        parsed,
+            time:        new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+            webSearched: useWebSearch,
+          }]);
+          setSprintTopic("");
+        } catch (e) {
+          if (e.code === "AUTH_REQUIRED") { handleAuthError(); return; }
+          setErr("This sprint hit a snag. Please try again.");
+        } finally { setLoading(false); }
+      };
+
+      // ── Generate research report ────────────────────────────────────────────
+      const generateSummary = async () => {
+        setSummaryLoading(true); setErr("");
+        try {
+          const data = await apiPost("/api/report", { sprints, ctx });
+          setSummary(data.result);
+          setShowSummary(true);
+        } catch (e) {
+          if (e.code === "AUTH_REQUIRED") { handleAuthError(); return; }
+          setErr("Report generation failed. Please try again.");
+        } finally { setSummaryLoading(false); }
+      };
+
+      // ── Copy helpers ────────────────────────────────────────────────────────
+      const copyText = (text) => {
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+        } else { fallbackCopy(text); }
+      };
+      const fallbackCopy = (text) => {
+        const el = document.createElement("textarea");
+        el.value = text;
+        el.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0;";
+        document.body.appendChild(el); el.focus(); el.select();
+        document.execCommand("copy"); document.body.removeChild(el);
+      };
+      const copyReport = () => {
+        copyText(summary); setReportCopied(true);
+        setTimeout(() => setReportCopied(false), 2500);
+      };
+      const copyCard = (sprint) => {
+        const lines = [
+          sprint.data.title, "",
+          "KEY RESEARCH QUESTIONS",
+          ...sprint.data.keyQuestions.map((q, i) => `${i + 1}. ${q}`), "",
+          "ESSENTIAL FACTS", sprint.data.essentialFacts, "",
+          "AUTHENTICITY RED FLAGS",
+          ...sprint.data.authenticityFlags.map(f => `• ${f}`), "",
+          "SENSORY AND ATMOSPHERIC DETAIL", sprint.data.sensoryDetails, "",
+          "SOURCES", ...sprint.data.sources.map(s => `• ${s}`),
+        ];
+        copyText(lines.join("\n"));
+        setCardCopied(sprint.id);
+        setTimeout(() => setCardCopied(null), 2500);
+      };
+
+      const inp = {
+        width: "100%", padding: "13px 14px", border: `1px solid ${C.border}`,
+        borderRadius: "3px", fontFamily: "Georgia,serif", fontSize: "16px",
+        color: C.text, background: "#fff",
+      };
+
+      // ── Setup screen ─────────────────────────────────────────────────────
+      if (screen === "setup") {
+        const canStart = ctx.genre.trim() && ctx.period.trim() && ctx.setting.trim();
+        return (
+          <div style={{ minHeight: "100vh", background: C.bg }}>
+            <Header ctx={ctx} onSignOut={onSignOut} showContext={false} />
+            <div style={{ maxWidth: "680px", margin: "0 auto", padding: "40px 24px" }}>
+              <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
+                fontSize: "32px", color: C.green, marginBottom: "8px" }}>
+                Set Your Novel Context
+              </div>
+              <div style={{ fontSize: "17px", color: C.textMid, fontStyle: "italic", marginBottom: "32px" }}>
+                Tell Rabbit Research about your novel. This shapes every sprint you run.
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
+                {[
+                  { key:"genre",   label:"Genre",                   placeholder:"e.g. Historical Fiction, Crime, Fantasy",              req:true  },
+                  { key:"period",  label:"Period or Era",            placeholder:"e.g. Victorian 1880s, Ancient Rome, 1920s",            req:true  },
+                  { key:"setting", label:"Setting or Location",      placeholder:"e.g. London, rural Tuscany, colonial Boston",          req:true  },
+                  { key:"premise", label:"Brief Premise (optional)", placeholder:"e.g. A surgeon navigating London's criminal underworld", req:false },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label style={{ display: "block", fontSize: "13px", letterSpacing: "0.08em",
+                      textTransform: "uppercase", color: C.textMid, marginBottom: "8px" }}>
+                      {f.label}{f.req ? " *" : ""}
+                    </label>
+                    <input style={inp} placeholder={f.placeholder} value={ctx[f.key]}
+                      onChange={e => setCtx(p => ({ ...p, [f.key]: e.target.value }))} />
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ background: "#e6eeea", border: "1px solid #bad0c2", borderRadius: "3px",
+                padding: "20px 22px", marginBottom: "20px", fontSize: "15px",
+                color: C.textMid, lineHeight: "1.75" }}>
+                <strong style={{ color: C.green, display: "block", marginBottom: "8px" }}>
+                  How Rabbit Research works
+                </strong>
+                Set your novel context once, then run focused <strong>Research Sprints</strong> on
+                specific topics. Each sprint produces a structured <strong>index card</strong> covering
+                key facts, research questions, authenticity red flags, sensory detail, and sources.
+                When you are ready, compile all your cards into a single <strong>Research Report</strong> to
+                keep beside you as you write.
+              </div>
+
+              <div style={{ background: C.paper, border: `1px solid ${C.border}`, borderRadius: "3px",
+                padding: "18px 20px", marginBottom: "28px" }}>
+                <div style={{ fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase",
+                  color: C.textMid, marginBottom: "14px" }}>Research Mode</div>
+                <Toggle value={useWebSearch} onChange={() => setUseWebSearch(p => !p)} large
+                  labelOn="Live web search on"
+                  labelOff="Use Claude's knowledge (recommended)"
+                  descOn="Each sprint searches the web for current information. Slower but good for recent or obscure topics."
+                  descOff="Fast and reliable for most research. Covers history, culture, science, and more in depth."
+                />
+              </div>
+
+              <button onClick={() => setScreen("research")} disabled={!canStart}
+                style={{ padding: "14px 36px", background: canStart ? C.green : "#a0a0a0",
+                  color: "#fff", border: "none", borderRadius: "3px", fontFamily: "Georgia,serif",
+                  fontSize: "16px", cursor: canStart ? "pointer" : "default", letterSpacing: "0.04em" }}>
+                Begin Research →
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      // ── Research screen ──────────────────────────────────────────────────
+      return (
+        <div style={{ minHeight: "100vh", background: C.bg }}>
+          <Header ctx={ctx} onChangeContext={() => setScreen("setup")}
+            onSignOut={onSignOut} showContext={true} />
+
+          <div style={{ maxWidth: "920px", margin: "0 auto", padding: "28px 20px" }}>
+
+            {/* Sprint input panel */}
+            <div style={{ background: C.paper, border: `1px solid ${C.border}`, borderRadius: "4px",
+              padding: "24px", marginBottom: "28px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
+                fontSize: "20px", color: C.green, marginBottom: "6px" }}>
+                Run a Research Sprint
+              </div>
+              <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic", marginBottom: "14px" }}>
+                Enter one focused topic per sprint. The more specific, the richer the card.
+              </div>
+              <div style={{ fontSize: "13px", color: C.textLight, marginBottom: "16px", lineHeight: 1.7 }}>
+                <strong style={{ color: C.textMid }}>Examples:</strong>{" "}
+                "Victorian street markets and trading customs, 1880s" · "Medieval siege warfare and
+                castle defences" · "1920s jazz clubs in Harlem" · "Roman legionary daily routine and kit"
+              </div>
+              <div style={{ display: "flex", gap: "10px", marginBottom: "14px" }}>
+                <input
+                  style={{ flex: 1, padding: "12px 15px", border: `1px solid ${C.border}`,
+                    borderRadius: "3px", fontFamily: "Georgia,serif", fontSize: "15px",
+                    color: C.text, background: C.bg }}
+                  placeholder="e.g. Victorian street medicine and travelling apothecaries, 1870s…"
+                  value={sprintTopic}
+                  onChange={e => setSprintTopic(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && runSprint()}
+                  disabled={loading}
+                />
+                <button onClick={runSprint} disabled={loading || !sprintTopic.trim()}
+                  style={{ padding: "12px 22px", border: "none", borderRadius: "3px",
+                    background: loading || !sprintTopic.trim() ? "#8aaa96" : C.green,
+                    color: "#fff", fontFamily: "Georgia,serif", fontSize: "15px",
+                    cursor: loading || !sprintTopic.trim() ? "default" : "pointer",
+                    whiteSpace: "nowrap", minWidth: "140px" }}>
+                  {loading ? (useWebSearch ? "Searching…" : "Researching…") : "Run Sprint →"}
+                </button>
+              </div>
+              <Toggle value={useWebSearch} onChange={() => setUseWebSearch(p => !p)}
+                labelOn="Live web search on — slower but more current"
+                labelOff="Live web search off — faster, uses Claude's knowledge"
+              />
+              {err && (
+                <div style={{ color: C.red, fontSize: "14px", fontStyle: "italic", marginTop: "12px" }}>
+                  {err}
+                </div>
+              )}
+            </div>
+
+            {/* Sprint cards */}
+            {sprints.length > 0 ? (
+              <>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                  marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+                  <div>
+                    <span style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
+                      fontSize: "20px", color: C.green }}>Research Cards</span>
+                    <span style={{ marginLeft: "12px", fontSize: "13px", color: C.textLight, fontStyle: "italic" }}>
+                      {sprints.length} sprint{sprints.length !== 1 ? "s" : ""} completed
+                    </span>
+                  </div>
+                  <button onClick={generateSummary} disabled={summaryLoading}
+                    style={{ padding: "11px 20px", border: "none", borderRadius: "3px",
+                      background: summaryLoading ? "#c0955a" : C.amber,
+                      color: "#fff", fontFamily: "Georgia,serif", fontSize: "14px",
+                      cursor: summaryLoading ? "default" : "pointer" }}>
+                    {summaryLoading ? "Compiling report…" : "📄 Generate Research Report"}
+                  </button>
+                </div>
+
+                <div style={{ display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "20px" }}>
+                  {[...sprints].reverse().map((sprint, i) => (
+                    <div key={sprint.id} className={i === 0 ? "sprint-card" : ""}
+                      style={{ background: C.card, border: `1px solid ${C.borderLight}`,
+                        borderTop: `3px solid ${C.green}`, borderRadius: "3px",
+                        padding: "22px", boxShadow: "0 3px 12px rgba(0,0,0,0.06)" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start",
+                        justifyContent: "space-between", gap: "10px", marginBottom: "4px" }}>
+                        <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
+                          fontSize: "18px", fontWeight: "700", color: C.green, lineHeight: 1.3 }}>
+                          {sprint.data.title}
+                        </div>
+                        <button onClick={() => copyCard(sprint)}
+                          style={{ flexShrink: 0, padding: "5px 12px", border: "none", borderRadius: "3px",
+                            background: cardCopied === sprint.id ? "#2d7a4f" : C.amber,
+                            color: "#fff", fontFamily: "Georgia,serif", fontSize: "12px",
+                            cursor: "pointer", transition: "background 0.2s", whiteSpace: "nowrap" }}>
+                          {cardCopied === sprint.id ? "✓ Copied" : "Copy card"}
+                        </button>
+                      </div>
+                      <div style={{ fontSize: "12px", color: C.textLight, fontStyle: "italic", marginBottom: "6px" }}>
+                        {sprint.webSearched ? "🌐 Web search · " : ""}Sprint at {sprint.time}
+                      </div>
+
+                      <SectionBlock label="Key Research Questions" color={C.amber}>
+                        <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "15px",
+                          color: C.textMid, lineHeight: "1.8" }}>
+                          {sprint.data.keyQuestions.map((q, j) => (
+                            <li key={j} style={{ marginBottom: "4px" }}>{q}</li>
+                          ))}
+                        </ul>
+                      </SectionBlock>
+
+                      <SectionBlock label="Essential Facts" color={C.amber}>
+                        <p style={{ margin: 0, fontSize: "15px", color: C.textMid, lineHeight: "1.75" }}>
+                          {sprint.data.essentialFacts}
+                        </p>
+                      </SectionBlock>
+
+                      <SectionBlock label="Authenticity Red Flags" color={C.red}>
+                        <ul style={{ margin: 0, fontSize: "15px", color: C.red, lineHeight: "1.8",
+                          background: C.flagBg, padding: "10px 12px 10px 30px", borderRadius: "3px" }}>
+                          {sprint.data.authenticityFlags.map((f, j) => (
+                            <li key={j} style={{ marginBottom: "4px" }}>{f}</li>
+                          ))}
+                        </ul>
+                      </SectionBlock>
+
+                      <SectionBlock label="Sensory and Atmospheric Detail" color={C.amber}>
+                        <p style={{ margin: 0, fontSize: "15px", color: C.textMid,
+                          lineHeight: "1.75", fontStyle: "italic" }}>
+                          {sprint.data.sensoryDetails}
+                        </p>
+                      </SectionBlock>
+
+                      <SectionBlock label="Sources to Explore" color={C.amber}>
+                        <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "14px",
+                          color: C.textMid, lineHeight: "1.85" }}>
+                          {sprint.data.sources.map((src, j) => (
+                            <li key={j} style={{ marginBottom: "4px" }}>{src}</li>
+                          ))}
+                        </ul>
+                      </SectionBlock>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: "center", padding: "72px 24px", color: C.textLight }}>
+                <div style={{ fontSize: "48px", marginBottom: "16px" }}>🐇</div>
+                <div style={{ fontSize: "17px", fontStyle: "italic", marginBottom: "10px" }}>
+                  Run your first sprint above to start building your research cards.
+                </div>
+                <div style={{ fontSize: "15px" }}>
+                  Each card covers one focused topic. Build as many as your novel needs,
+                  then compile them into a Research Report.
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Research Report modal */}
+          {showSummary && (
+            <div onClick={e => e.target === e.currentTarget && setShowSummary(false)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+                display: "flex", alignItems: "flex-start", justifyContent: "center",
+                padding: "32px 16px", overflowY: "auto", zIndex: 200 }}>
+              <div style={{ background: C.paper, borderRadius: "4px", padding: "40px",
+                maxWidth: "720px", width: "100%", position: "relative",
+                boxShadow: "0 24px 64px rgba(0,0,0,0.3)", marginBottom: "32px" }}>
+                <button onClick={() => setShowSummary(false)}
+                  style={{ position: "absolute", top: "16px", right: "16px", background: "none",
+                    border: "none", fontSize: "20px", cursor: "pointer",
+                    color: C.textLight, padding: "4px 8px", lineHeight: 1 }}>✕</button>
+                <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
+                  fontSize: "26px", color: C.green, marginBottom: "4px" }}>Research Report</div>
+                <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic", marginBottom: "20px" }}>
+                  {ctx.genre} · {ctx.period} · {ctx.setting} · {sprints.length} sprint{sprints.length !== 1 ? "s" : ""}
+                </div>
+                <button onClick={copyReport}
+                  style={{ width: "100%", padding: "12px", border: "none", borderRadius: "3px",
+                    background: reportCopied ? "#2d7a4f" : C.amber, color: "#fff",
+                    fontFamily: "Georgia,serif", fontSize: "15px", cursor: "pointer",
+                    marginBottom: "24px", transition: "background 0.2s" }}>
+                  {reportCopied ? "✓ Copied to clipboard" : "Copy Report to Clipboard"}
+                </button>
+                <div style={{ borderTop: `1px solid ${C.borderLight}`, paddingTop: "20px" }}>
+                  <RenderMarkdown text={summary} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ── Root App ──────────────────────────────────────────────────────────────
+    function App() {
+      const [authenticated, setAuthenticated] = useState(() => !!getSession());
+
+      if (!authenticated) {
+        return <AuthGate />;
+      }
+
+      return (
+        <ResearchRabbit onSignOut={() => { clearSession(); setAuthenticated(false); }} />
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>

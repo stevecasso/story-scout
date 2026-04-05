@@ -1,0 +1,20 @@
+{
+  "name": "rabbit-research-for-authors",
+  "version": "1.0.0",
+  "description": "A content research tool for authors.",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "deploy": "vercel"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@upstash/redis": "^1.34.0"
+  },
+  "devDependencies": {
+    "vercel": "^41.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

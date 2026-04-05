@@ -696,11 +696,7 @@
             )}
           </div>
 
-          {/* Research Report modal */}
-          {showSummary && (
-            <div onClick={e => e.target === e.currentTarget && setShowSummary(false)}
-
-                        {/* Guide modal */}
+                    {/* Guide modal */}
           {showGuide && (
             <div onClick={e => e.target === e.currentTarget && setShowGuide(false)}
               style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
@@ -721,9 +717,7 @@
                 <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic", marginBottom: "24px" }}>
                   How to get the most from Rabbit Research
                 </div>
-
                 <div style={{ borderTop: `1px solid ${C.borderLight}`, paddingTop: "20px" }}>
-
                   <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
                     fontSize: "20px", color: C.green, margin: "0 0 10px", fontWeight: "700" }}>
                     1. Set Your Novel Context First
@@ -745,7 +739,6 @@
                     using the "Change Context" button in the header. This is useful if you are researching
                     multiple novels or different sections of the same book with different settings.
                   </div>
-
                   <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
                     fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
                     2. Run Focused Research Sprints
@@ -767,7 +760,6 @@
                     Each sprint produces a structured <strong>research card</strong> containing five sections
                     designed specifically for fiction writers.
                   </p>
-
                   <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
                     fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
                     3. Understanding Your Research Cards
@@ -801,7 +793,6 @@
                     to copy its contents to your clipboard, then paste it into your writing notes, Scrivener,
                     Notion, or wherever you plan your novel.
                   </div>
-
                   <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
                     fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
                     4. Live Web Search vs Claude's Knowledge
@@ -817,7 +808,6 @@
                       Slower, but useful for very recent events, niche local history, or obscure topics
                       that benefit from current online sources.</li>
                   </ul>
-
                   <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
                     fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
                     5. Build Up, Then Compile Your Report
@@ -834,7 +824,6 @@
                   <p style={{ margin: "0 0 12px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
                     You can copy the entire report to your clipboard with one click.
                   </p>
-
                   <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
                     fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
                     6. A Suggested Workflow
@@ -847,7 +836,6 @@
                     <li style={{ marginBottom: "6px" }}>Run follow-up sprints on any gaps or questions that emerged</li>
                     <li style={{ marginBottom: "6px" }}>Generate your Research Report and keep it to hand while writing</li>
                   </ol>
-
                   <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: "3px",
                     padding: "16px 18px", marginTop: "20px", textAlign: "center" }}>
                     <div style={{ fontSize: "13px", color: C.textLight, textTransform: "uppercase",
@@ -856,11 +844,13 @@
                       Questions or feedback? Let us know in the community.
                     </div>
                   </div>
-
                 </div>
               </div>
             </div>
           )}
+          {/* Research Report modal */}
+          {showSummary && (
+            <div onClick={e => e.target === e.currentTarget && setShowSummary(false)}
               style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
                 display: "flex", alignItems: "flex-start", justifyContent: "center",
                 padding: "32px 16px", overflowY: "auto", zIndex: 200 }}>

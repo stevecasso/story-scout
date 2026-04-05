@@ -162,7 +162,7 @@
             </div>
             <div style={{ fontSize: "15px", color: C.textMid, lineHeight: "1.7", marginBottom: "24px" }}>
               We've sent a sign-in link to <strong>{email}</strong>.<br />
-              Click it to access Rabbit Research. The link expires in 15 minutes.
+              Click it to access Story Scout. The link expires in 15 minutes.
             </div>
             <button onClick={() => { setSent(false); setEmail(""); }}
               style={{ fontSize: "14px", color: C.textLight, background: "none",
@@ -183,7 +183,7 @@
             </div>
             <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
               fontSize: "30px", fontWeight: "700", color: C.green, letterSpacing: "-0.01em" }}>
-              Rabbit Research
+              Story Scout
             </div>
             <div style={{ fontSize: "15px", color: C.textLight, fontStyle: "italic",
               marginBottom: "36px", marginTop: "6px" }}>
@@ -336,7 +336,7 @@
               <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
                 fontSize: showContext ? "20px" : "22px", fontWeight: "700",
                 color: "#fff", lineHeight: 1.2 }}>
-                Rabbit Research
+                Story Scout
               </div>
               {showContext && (
                 <div style={{ display: "flex", gap: "8px", marginTop: "4px", flexWrap: "wrap" }}>
@@ -379,7 +379,7 @@
     }
 
     // ── Research Rabbit Main App ──────────────────────────────────────────────
-    function ResearchRabbit({ onSignOut }) {
+    function StoryScout({ onSignOut }) {
       const [screen,         setScreen]         = useState("setup");
       const [ctx,            setCtx]            = useState({ genre:"", period:"", setting:"", premise:"" });
       const [sprintTopic,    setSprintTopic]    = useState("");
@@ -482,7 +482,7 @@
                 Set Your Novel Context
               </div>
               <div style={{ fontSize: "17px", color: C.textMid, fontStyle: "italic", marginBottom: "32px" }}>
-                Tell Rabbit Research about your novel. This shapes every sprint you run.
+                Tell Story Scout about your novel. This shapes every sprint you run.
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
@@ -507,7 +507,7 @@
                 padding: "20px 22px", marginBottom: "20px", fontSize: "15px",
                 color: C.textMid, lineHeight: "1.75" }}>
                 <strong style={{ color: C.green, display: "block", marginBottom: "8px" }}>
-                  How Rabbit Research works
+                  How Story Scout works
                 </strong>
                 Set your novel context once, then run focused <strong>Research Sprints</strong> on
                 specific topics. Each sprint produces a structured <strong>index card</strong> covering
@@ -554,7 +554,7 @@
                     fontSize: "26px", color: C.green }}>Getting Started Guide</div>
                 </div>
                 <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic", marginBottom: "24px" }}>
-                  How to get the most from Rabbit Research
+                  How to get the most from Story Scout
                 </div>
                 <div style={{ borderTop: `1px solid ${C.borderLight}`, paddingTop: "20px" }}>
                   <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
@@ -562,7 +562,7 @@
                     1. Set Your Novel Context First
                   </h2>
                   <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    The context screen is the foundation of everything Rabbit Research does for you.
+                    The context screen is the foundation of everything Story Scout does for you.
                     When you enter your <strong>genre</strong>, <strong>period</strong>, <strong>setting</strong>,
                     and optionally a <strong>brief premise</strong>, you are telling the AI exactly what world
                     your novel inhabits.
@@ -867,7 +867,7 @@
                     fontSize: "26px", color: C.green }}>Getting Started Guide</div>
                 </div>
                 <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic", marginBottom: "24px" }}>
-                  How to get the most from Rabbit Research
+                  How to get the most from Story Scout
                 </div>
                 <div style={{ borderTop: `1px solid ${C.borderLight}`, paddingTop: "20px" }}>
                   <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
@@ -875,7 +875,7 @@
                     1. Set Your Novel Context First
                   </h2>
                   <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    The context screen is the foundation of everything Rabbit Research does for you.
+                    The context screen is the foundation of everything Story Scout does for you.
                     When you enter your <strong>genre</strong>, <strong>period</strong>, <strong>setting</strong>,
                     and optionally a <strong>brief premise</strong>, you are telling the AI exactly what world
                     your novel inhabits.
@@ -1044,7 +1044,7 @@
       }
 
       return (
-        <ResearchRabbit onSignOut={() => { clearSession(); setAuthenticated(false); }} />
+        <StoryScout onSignOut={() => { clearSession(); setAuthenticated(false); }} />
       );
     }
 

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Prompt Architect for Authors — Password Auth Route
+// Story Scout for Authors — Password Auth Route
 // Runs as a Vercel serverless function at: POST /api/auth
 //
 // The frontend sends a password. This checks it against the ACCESS_PASSWORD

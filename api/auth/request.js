@@ -59,7 +59,7 @@ async function sendMagicLinkEmail(email, magicLink) {
   }
 
   const from    = process.env.RESEND_FROM_EMAIL || "noreply@aiforauthorscircle.com";
-  const subject = "Your sign-in link for Rabbit Research";
+  const subject = "Your sign-in link for Story Scout";
   const html    = buildEmailHtml(magicLink);
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -96,7 +96,7 @@ function buildEmailHtml(magicLink) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sign in to Prompt Architect</title>
+  <title>Sign in to Story Scout</title>
 </head>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:'Georgia',serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 20px;">
@@ -110,7 +110,7 @@ function buildEmailHtml(magicLink) {
             <td>
               <p style="margin:0 0 4px;font-family:'Georgia',serif;
                         font-size:1.3rem;font-weight:500;color:#1a1a1a;">
-                Prompt Architect
+                Story Scout
               </p>
               <p style="margin:0 0 32px;font-family:'Inter',sans-serif;
                         font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;
@@ -131,7 +131,7 @@ function buildEmailHtml(magicLink) {
                         text-decoration:none;padding:14px 32px;border-radius:8px;
                         font-family:'Inter',sans-serif;font-size:0.9375rem;
                         font-weight:600;letter-spacing:0.01em;">
-                Sign in to Prompt Architect
+                Sign in to Story Scout
               </a>
               <p style="margin:32px 0 0;font-family:'Inter',sans-serif;
                         font-size:0.8rem;color:#999;line-height:1.5;">

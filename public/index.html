@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
- <title>Story Scout for Authors</title>
+  <title>Story Scout for Authors</title>
 
-  <!-- Google Fonts -->
+  <!-- Google Fonts — matches Prompt Architect exactly -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <!-- React 18 + Babel Standalone (JSX without a build step) -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -18,26 +18,26 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
-    body { background: #f5f1ea; font-family: Georgia, 'Times New Roman', serif; }
+    body { background: #f5f5f5; font-family: 'Inter', system-ui, sans-serif; }
     #root { min-height: 100vh; }
 
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(14px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .fade-up    { animation: fadeUp 0.45s ease; }
+    .fade-up     { animation: fadeUp 0.45s ease; }
     .sprint-card { animation: fadeUp 0.4s ease; }
 
     input:focus, textarea:focus {
       outline: none;
-      border-color: #1e3a2f !important;
-      box-shadow: 0 0 0 2px rgba(30,58,47,0.12) !important;
+      border-color: #4CAF50 !important;
+      box-shadow: 0 0 0 3px rgba(76,175,80,0.15) !important;
     }
-    button:focus-visible { outline: 2px solid #1e3a2f; outline-offset: 2px; }
+    button:focus-visible { outline: 2px solid #4CAF50; outline-offset: 2px; }
 
     ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #f5f1ea; }
-    ::-webkit-scrollbar-thumb { background: #c8b99a; border-radius: 3px; }
+    ::-webkit-scrollbar-track { background: #f5f5f5; }
+    ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
   </style>
 </head>
 <body>
@@ -46,29 +46,36 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // ── Colour palette ────────────────────────────────────────────────────────
+    // ── Colour palette — matches Prompt Architect ─────────────────────────
     const C = {
-      bg:          "#f5f1ea",
-      paper:       "#fdfaf5",
-      green:       "#1e3a2f",
-      greenDark:   "#142a22",
-      amber:       "#b5712a",
-      text:        "#2a1f14",
-      textMid:     "#5c4a35",
-      textLight:   "#8c7860",
-      border:      "#d4c5ae",
-      borderLight: "#e8ddd0",
-      card:        "#fffdf8",
-      red:         "#8b3a3a",
-      flagBg:      "#fdf5f2",
+      bg:          "#f5f5f5",
+      paper:       "#ffffff",
+      green:       "#4CAF50",
+      greenDark:   "#388E3C",
+      greenDeep:   "#2e7d32",
+      amber:       "#4CAF50",   // unified to PA accent
+      text:        "#1a1a1a",
+      textMid:     "#444444",
+      textLight:   "#666666",
+      border:      "#e0e0e0",
+      borderLight: "#e0e0e0",
+      card:        "#ffffff",
+      red:         "#c0392b",
+      flagBg:      "#fdf0ee",
+      resultBg:    "#f1f8f1",
     };
 
-    // ── Session helpers ───────────────────────────────────────────────────────
-    const SESSION_KEY  = "pa_session";
-    const getSession   = ()  => localStorage.getItem(SESSION_KEY);
-    const clearSession = ()  => localStorage.removeItem(SESSION_KEY);
+    const SERIF = "'Lora', Georgia, serif";
+    const SANS  = "'Inter', system-ui, sans-serif";
+    const RADIUS = "10px";
+    const SHADOW = "0 2px 12px rgba(0,0,0,0.08)";
 
-    // ── Authenticated API call ────────────────────────────────────────────────
+    // ── Session helpers ───────────────────────────────────────────────────
+    const SESSION_KEY  = "pa_session";
+    const getSession   = () => localStorage.getItem(SESSION_KEY);
+    const clearSession = () => localStorage.removeItem(SESSION_KEY);
+
+    // ── Authenticated API call ────────────────────────────────────────────
     async function apiPost(path, body) {
       const res = await fetch(path, {
         method:  "POST",
@@ -88,27 +95,7 @@
       return data;
     }
 
-    // ── AIFAC Logo ────────────────────────────────────────────────────────────
-    function AifacLogo({ size = 32 }) {
-      return (
-        <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="50" r="50" fill="#1a5c35" />
-          <path d="M49,62 Q22,58 20,28 L26,27 Q27,55 49,58 Z" fill="white" opacity="0.5" />
-          <path d="M49,62 Q24,57 22,26 L27,25 Q28,54 49,58 Z" fill="white" opacity="0.55" />
-          <path d="M49,62 Q26,56 24,24 L29,23 Q30,53 49,58 Z" fill="white" opacity="0.6" />
-          <path d="M49,62 Q28,55 28,22 L49,22 Z" fill="white" />
-          <path d="M51,62 Q78,58 80,28 L74,27 Q73,55 51,58 Z" fill="white" opacity="0.5" />
-          <path d="M51,62 Q76,57 78,26 L73,25 Q72,54 51,58 Z" fill="white" opacity="0.55" />
-          <path d="M51,62 Q74,56 76,24 L71,23 Q70,53 51,58 Z" fill="white" opacity="0.6" />
-          <path d="M51,62 Q72,55 72,22 L51,22 Z" fill="white" />
-          <path d="M47,62 Q50,65 53,62 L51,22 L49,22 Z" fill="white" />
-          <text x="38" y="48" fontFamily="Georgia,serif" fontSize="17" fontWeight="700"
-            fill="#1a5c35" textAnchor="middle">ai</text>
-        </svg>
-      );
-    }
-
-    // ── Auth Gate ─────────────────────────────────────────────────────────────
+    // ── Auth Gate ─────────────────────────────────────────────────────────
     function AuthGate() {
       const [email,   setEmail]   = useState("");
       const [sent,    setSent]    = useState(false);
@@ -139,34 +126,35 @@
 
       const gateWrap = {
         minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-        background: `linear-gradient(150deg, ${C.green} 0%, ${C.greenDark} 100%)`,
+        background: C.bg, padding: "20px",
       };
       const card = {
-        background: C.paper, borderRadius: "4px", padding: "52px 44px",
-        maxWidth: "400px", width: "90%", textAlign: "center",
-        boxShadow: "0 24px 64px rgba(0,0,0,0.35)",
+        background: C.paper, borderRadius: RADIUS, padding: "40px 36px",
+        maxWidth: "400px", width: "100%", textAlign: "center",
+        boxShadow: SHADOW, border: `1px solid ${C.border}`,
       };
       const inp = {
-        width: "100%", padding: "13px 16px", border: `1px solid ${C.border}`,
-        borderRadius: "3px", fontFamily: "Georgia,serif", fontSize: "16px",
-        color: C.text, background: "#fff",
+        width: "100%", padding: "12px 14px", border: `1px solid ${C.border}`,
+        borderRadius: RADIUS, fontFamily: SANS, fontSize: "15px",
+        color: C.text, background: C.bg, marginBottom: "16px",
       };
 
       if (sent) return (
         <div style={gateWrap}>
           <div className="fade-up" style={card}>
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}>📬</div>
-            <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-              fontSize: "24px", fontWeight: "700", color: C.green, marginBottom: "12px" }}>
-              Check your inbox
-            </div>
-            <div style={{ fontSize: "15px", color: C.textMid, lineHeight: "1.7", marginBottom: "24px" }}>
-              We've sent a sign-in link to <strong>{email}</strong>.<br />
-              Click it to access Story Scout. The link expires in 15 minutes.
+            <img src="/ai_for_authors_logo_final.png" alt="AI for Authors Circle"
+              style={{ height: "56px", width: "auto", marginBottom: "20px" }} />
+            <div style={{ fontSize: "40px", marginBottom: "16px" }}>📬</div>
+            <div style={{ fontFamily: SERIF, fontSize: "1.2rem", fontWeight: "500",
+              color: C.text, marginBottom: "10px" }}>Check your email</div>
+            <div style={{ fontSize: "14px", color: C.textLight, lineHeight: "1.6", marginBottom: "24px" }}>
+              We sent a sign-in link to <strong style={{ color: C.text }}>{email}</strong>.<br />
+              It expires in 15 minutes. Check your spam folder if you don't see it.
             </div>
             <button onClick={() => { setSent(false); setEmail(""); }}
-              style={{ fontSize: "14px", color: C.textLight, background: "none",
-                border: "none", cursor: "pointer", textDecoration: "underline" }}>
+              style={{ fontSize: "13px", color: C.textLight, background: "none",
+                border: "none", cursor: "pointer", textDecoration: "underline",
+                fontFamily: SANS }}>
               Use a different email
             </button>
           </div>
@@ -176,56 +164,52 @@
       return (
         <div style={gateWrap}>
           <div className="fade-up" style={card}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center",
-              gap: "14px", marginBottom: "10px" }}>
-              <AifacLogo size={52} />
-              <span style={{ fontSize: "52px", lineHeight: 1 }}>🐇</span>
-            </div>
-            <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-              fontSize: "30px", fontWeight: "700", color: C.green, letterSpacing: "-0.01em" }}>
-              Story Scout
-            </div>
-            <div style={{ fontSize: "15px", color: C.textLight, fontStyle: "italic",
-              marginBottom: "36px", marginTop: "6px" }}>
-              AI research assistant for fiction writers
+            <img src="/ai_for_authors_logo_final.png" alt="AI for Authors Circle"
+              style={{ height: "56px", width: "auto", marginBottom: "20px" }} />
+            <div style={{ fontFamily: SERIF, fontSize: "1.3rem", fontWeight: "500",
+              color: C.text, marginBottom: "6px" }}>Story Scout</div>
+            <div style={{ fontSize: "14px", color: C.textLight, marginBottom: "28px" }}>
+              Enter your email to receive a sign-in link.
             </div>
 
             {linkExpired && (
-              <div style={{ background: "#fdf5f2", border: "1px solid #e0c0b8", borderRadius: "3px",
-                padding: "12px 14px", marginBottom: "20px", fontSize: "14px",
+              <div style={{ background: C.flagBg, border: "1px solid #f0b8b0", borderRadius: RADIUS,
+                padding: "10px 14px", marginBottom: "16px", fontSize: "14px",
                 color: C.red, textAlign: "left" }}>
                 Your sign-in link has expired. Please request a new one below.
               </div>
             )}
 
-            <div style={{ textAlign: "left", marginBottom: "20px" }}>
-              <label style={{ display: "block", fontSize: "13px", letterSpacing: "0.08em",
-                textTransform: "uppercase", color: C.textMid, marginBottom: "8px" }}>
-                Your email address
+            {error && (
+              <div style={{ background: C.flagBg, border: "1px solid #f0b8b0", borderRadius: RADIUS,
+                padding: "10px 14px", marginBottom: "16px", fontSize: "14px",
+                color: C.red, textAlign: "left" }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ textAlign: "left", marginBottom: "0" }}>
+              <label style={{ display: "block", fontSize: "14px", fontWeight: "600",
+                color: C.text, marginBottom: "6px", fontFamily: SANS }}>
+                Email address
               </label>
               <input style={inp} type="email" placeholder="you@example.com"
                 value={email}
                 onChange={e => { setEmail(e.target.value); setError(""); }}
                 onKeyDown={e => e.key === "Enter" && requestLink()}
               />
-              {error && (
-                <div style={{ color: C.red, fontSize: "14px", fontStyle: "italic", marginTop: "6px" }}>
-                  {error}
-                </div>
-              )}
             </div>
 
             <button onClick={requestLink} disabled={loading || !email.trim()}
-              style={{ width: "100%", padding: "14px", borderRadius: "3px", border: "none",
-                background: loading || !email.trim() ? "#8aaa96" : C.green,
-                color: "#fff", fontFamily: "Georgia,serif", fontSize: "16px",
-                cursor: loading || !email.trim() ? "default" : "pointer",
-                letterSpacing: "0.04em" }}>
-              {loading ? "Sending link…" : "Send sign-in link"}
+              style={{ width: "100%", padding: "13px 28px", borderRadius: RADIUS, border: "none",
+                background: loading || !email.trim() ? "#a5d6a7" : C.green,
+                color: "#fff", fontFamily: SANS, fontSize: "15px", fontWeight: "600",
+                cursor: loading || !email.trim() ? "default" : "pointer" }}>
+              {loading ? "Sending link…" : "Send me a link"}
             </button>
 
-            <div style={{ marginTop: "24px", fontSize: "12px", color: C.textLight,
-              letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            <div style={{ marginTop: "24px", fontSize: "11px", color: C.textLight,
+              letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: SANS }}>
               An AI for Authors Circle Member Tool
             </div>
           </div>
@@ -233,12 +217,12 @@
       );
     }
 
-    // ── Helper components ─────────────────────────────────────────────────────
+    // ── Helper components ─────────────────────────────────────────────────
     function SectionBlock({ label, color, children }) {
       return (
         <div style={{ marginTop: "16px" }}>
           <div style={{ fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase",
-            color, marginBottom: "7px", fontFamily: "Georgia,serif", fontWeight: "700" }}>
+            color, marginBottom: "7px", fontFamily: SANS, fontWeight: "700" }}>
             {label}
           </div>
           {children}
@@ -253,19 +237,19 @@
       return (
         <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
           <div onClick={onChange} style={{ width: sz.w, height: sz.h, borderRadius: "11px",
-            background: value ? C.green : "#d4c5ae", cursor: "pointer",
+            background: value ? C.green : "#ccc", cursor: "pointer",
             position: "relative", transition: "background 0.2s", flexShrink: 0, marginTop: "2px" }}>
             <div style={{ position: "absolute", top: sz.top, left: value ? sz.on : "3px",
               width: sz.thumb, height: sz.thumb, borderRadius: "50%", background: "#fff",
               transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.25)" }} />
           </div>
           <div onClick={onChange} style={{ cursor: "pointer" }}>
-            <div style={{ fontSize: large ? "15px" : "13px", color: C.text,
+            <div style={{ fontSize: large ? "15px" : "13px", color: C.text, fontFamily: SANS,
               marginBottom: (descOn || descOff) ? "3px" : 0 }}>
               {value ? labelOn : labelOff}
             </div>
             {(descOn || descOff) && (
-              <div style={{ fontSize: "13px", color: C.textLight, fontStyle: "italic" }}>
+              <div style={{ fontSize: "13px", color: C.textLight, fontStyle: "italic", fontFamily: SANS }}>
                 {value ? descOn : descOff}
               </div>
             )}
@@ -274,7 +258,7 @@
       );
     }
 
-    // ── Markdown renderer (for research report modal) ─────────────────────────
+    // ── Markdown renderer ─────────────────────────────────────────────────
     function inlineMarkdown(text) {
       const parts = []; const re = /(\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_)/g;
       let last = 0, m;
@@ -293,56 +277,56 @@
       while (i < lines.length) {
         const l = lines[i];
         if (/^## (.+)/.test(l)) {
-          els.push(<h2 key={i} style={{ fontFamily:"Palatino Linotype,Palatino,Georgia,serif",
-            fontSize:"20px", color:C.green, margin:"24px 0 8px", fontWeight:"700" }}>
+          els.push(<h2 key={i} style={{ fontFamily: SERIF, fontSize: "20px", color: C.greenDeep,
+            margin: "24px 0 8px", fontWeight: "500" }}>
             {inlineMarkdown(l.replace(/^## /,""))}</h2>);
         } else if (/^# (.+)/.test(l)) {
-          els.push(<h1 key={i} style={{ fontFamily:"Palatino Linotype,Palatino,Georgia,serif",
-            fontSize:"26px", color:C.green, margin:"0 0 6px", fontWeight:"700" }}>
+          els.push(<h1 key={i} style={{ fontFamily: SERIF, fontSize: "24px", color: C.greenDeep,
+            margin: "0 0 6px", fontWeight: "500" }}>
             {inlineMarkdown(l.replace(/^# /,""))}</h1>);
         } else if (/^---+$/.test(l.trim())) {
-          els.push(<hr key={i} style={{ border:"none", borderTop:`1px solid ${C.borderLight}`, margin:"20px 0" }} />);
+          els.push(<hr key={i} style={{ border: "none", borderTop: `1px solid ${C.border}`, margin: "20px 0" }} />);
         } else if (/^[-*] (.+)/.test(l)) {
           const items = [];
           while (i < lines.length && /^[-*] (.+)/.test(lines[i])) {
-            items.push(<li key={i} style={{ marginBottom:"5px" }}>
+            items.push(<li key={i} style={{ marginBottom: "5px" }}>
               {inlineMarkdown(lines[i].replace(/^[-*] /,""))}</li>);
             i++;
           }
-          els.push(<ul key={"ul"+i} style={{ paddingLeft:"20px", margin:"6px 0 10px",
-            fontSize:"15px", color:C.textMid, lineHeight:"1.75" }}>{items}</ul>);
+          els.push(<ul key={"ul"+i} style={{ paddingLeft: "20px", margin: "6px 0 10px",
+            fontSize: "15px", color: C.textMid, lineHeight: "1.75", fontFamily: SANS }}>{items}</ul>);
           continue;
         } else if (l.trim() === "") {
-          els.push(<div key={i} style={{ height:"6px" }} />);
+          els.push(<div key={i} style={{ height: "6px" }} />);
         } else {
-          els.push(<p key={i} style={{ margin:"0 0 10px", fontSize:"15px",
-            color:C.textMid, lineHeight:"1.8" }}>{inlineMarkdown(l)}</p>);
+          els.push(<p key={i} style={{ margin: "0 0 10px", fontSize: "15px",
+            color: C.textMid, lineHeight: "1.8", fontFamily: SANS }}>{inlineMarkdown(l)}</p>);
         }
         i++;
       }
       return <>{els}</>;
     }
 
-    // ── App Header ────────────────────────────────────────────────────────────
+    // ── App Header ────────────────────────────────────────────────────────
     function Header({ ctx, onChangeContext, onSignOut, onGuide, showContext }) {
       return (
         <div style={{ background: C.green, padding: showContext ? "14px 28px" : "16px 32px",
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.18)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <AifacLogo size={32} />
-            <span style={{ fontSize: showContext ? "26px" : "24px" }}>🐇</span>
+          boxShadow: "0 2px 10px rgba(0,0,0,0.15)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <img src="/ai_for_authors_logo_final.png" alt="AI for Authors Circle"
+              style={{ height: "36px", width: "auto" }} />
             <div>
-              <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                fontSize: showContext ? "20px" : "22px", fontWeight: "700",
-                color: "#fff", lineHeight: 1.2 }}>
+              <div style={{ fontFamily: SERIF, fontSize: showContext ? "20px" : "22px",
+                fontWeight: "500", color: "#fff", lineHeight: 1.2 }}>
                 Story Scout
               </div>
               {showContext && (
                 <div style={{ display: "flex", gap: "8px", marginTop: "4px", flexWrap: "wrap" }}>
                   {[ctx.genre, ctx.period, ctx.setting].filter(Boolean).map((v, i) => (
-                    <span key={i} style={{ fontSize: "12px", color: "rgba(255,255,255,0.85)",
-                      background: "rgba(255,255,255,0.12)", padding: "2px 10px", borderRadius: "20px" }}>
+                    <span key={i} style={{ fontSize: "12px", color: "rgba(255,255,255,0.9)",
+                      background: "rgba(255,255,255,0.18)", padding: "2px 10px",
+                      borderRadius: "20px", fontFamily: SANS }}>
                       {v}
                     </span>
                   ))}
@@ -353,24 +337,26 @@
           <div style={{ display: "flex", gap: "8px" }}>
             {onChangeContext && (
               <button onClick={onChangeContext}
-                style={{ background: "rgba(255,255,255,0.15)", color: "#fff",
-                  border: "1px solid rgba(255,255,255,0.25)", borderRadius: "3px",
-                  fontFamily: "Georgia,serif", fontSize: "13px", cursor: "pointer", padding: "7px 14px" }}>
+                style={{ background: "rgba(255,255,255,0.18)", color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.3)", borderRadius: RADIUS,
+                  fontFamily: SANS, fontSize: "13px", fontWeight: "500",
+                  cursor: "pointer", padding: "7px 14px" }}>
                 Change Context
               </button>
             )}
-                        {onGuide && (
+            {onGuide && (
               <button onClick={onGuide}
-                style={{ background: "rgba(255,255,255,0.15)", color: "#fff",
-                  border: "1px solid rgba(255,255,255,0.25)", borderRadius: "3px",
-                  fontFamily: "Georgia,serif", fontSize: "13px", cursor: "pointer", padding: "7px 14px" }}>
+                style={{ background: "rgba(255,255,255,0.18)", color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.3)", borderRadius: RADIUS,
+                  fontFamily: SANS, fontSize: "13px", fontWeight: "500",
+                  cursor: "pointer", padding: "7px 14px" }}>
                 Guide
               </button>
             )}
             <button onClick={onSignOut}
-              style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.75)",
-                border: "1px solid rgba(255,255,255,0.18)", borderRadius: "3px",
-                fontFamily: "Georgia,serif", fontSize: "13px", cursor: "pointer", padding: "7px 14px" }}>
+              style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.8)",
+                border: "1px solid rgba(255,255,255,0.2)", borderRadius: RADIUS,
+                fontFamily: SANS, fontSize: "13px", cursor: "pointer", padding: "7px 14px" }}>
               Sign out
             </button>
           </div>
@@ -378,8 +364,8 @@
       );
     }
 
-    // ── Research Rabbit Main App ──────────────────────────────────────────────
-    function StoryScout({ onSignOut }) {
+    // ── Main App ──────────────────────────────────────────────────────────
+    function ResearchRabbit({ onSignOut }) {
       const [screen,         setScreen]         = useState("setup");
       const [ctx,            setCtx]            = useState({ genre:"", period:"", setting:"", premise:"" });
       const [sprintTopic,    setSprintTopic]    = useState("");
@@ -392,11 +378,10 @@
       const [reportCopied,   setReportCopied]   = useState(false);
       const [cardCopied,     setCardCopied]     = useState(null);
       const [useWebSearch,   setUseWebSearch]   = useState(false);
-            const [showGuide,        setShowGuide]   = useState(false);
+      const [showGuide,      setShowGuide]      = useState(false);
 
       const handleAuthError = () => { clearSession(); onSignOut(); };
 
-      // ── Run a sprint ────────────────────────────────────────────────────────
       const runSprint = async () => {
         if (!sprintTopic.trim() || loading) return;
         setLoading(true); setErr("");
@@ -405,10 +390,8 @@
           const data   = await apiPost("/api/sprint", { topic: sprintTopic, novelCtx, useWebSearch });
           const parsed = JSON.parse(data.result.replace(/```json|```/g, "").trim());
           setSprints(prev => [...prev, {
-            id:          Date.now(),
-            topic:       sprintTopic,
-            data:        parsed,
-            time:        new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+            id: Date.now(), topic: sprintTopic, data: parsed,
+            time: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
             webSearched: useWebSearch,
           }]);
           setSprintTopic("");
@@ -418,7 +401,6 @@
         } finally { setLoading(false); }
       };
 
-      // ── Generate research report ────────────────────────────────────────────
       const generateSummary = async () => {
         setSummaryLoading(true); setErr("");
         try {
@@ -431,7 +413,6 @@
         } finally { setSummaryLoading(false); }
       };
 
-      // ── Copy helpers ────────────────────────────────────────────────────────
       const copyText = (text) => {
         if (navigator.clipboard?.writeText) {
           navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
@@ -465,259 +446,167 @@
       };
 
       const inp = {
-        width: "100%", padding: "13px 14px", border: `1px solid ${C.border}`,
-        borderRadius: "3px", fontFamily: "Georgia,serif", fontSize: "16px",
-        color: C.text, background: "#fff",
+        width: "100%", padding: "12px 14px", border: `1px solid ${C.border}`,
+        borderRadius: RADIUS, fontFamily: SANS, fontSize: "15px",
+        color: C.text, background: C.bg,
       };
 
-      // ── Setup screen ─────────────────────────────────────────────────────
+      const guideModal = showGuide && (
+        <div onClick={e => e.target === e.currentTarget && setShowGuide(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+            display: "flex", alignItems: "flex-start", justifyContent: "center",
+            padding: "32px 16px", overflowY: "auto", zIndex: 200 }}>
+          <div style={{ background: C.paper, borderRadius: RADIUS, padding: "40px",
+            maxWidth: "720px", width: "100%", position: "relative",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.2)", marginBottom: "32px",
+            border: `1px solid ${C.border}` }}>
+            <button onClick={() => setShowGuide(false)}
+              style={{ position: "absolute", top: "16px", right: "16px", background: "none",
+                border: "none", fontSize: "20px", cursor: "pointer",
+                color: C.textLight, padding: "4px 8px", lineHeight: 1 }}>✕</button>
+            <div style={{ fontFamily: SERIF, fontSize: "26px", color: C.greenDeep, marginBottom: "4px", fontWeight: "500" }}>
+              Getting Started Guide
+            </div>
+            <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic", marginBottom: "24px", fontFamily: SANS }}>
+              How to get the most from Story Scout
+            </div>
+            <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: "20px" }}>
+              {[
+                { title: "1. Set Your Novel Context First", body: "The context screen shapes everything Story Scout does for you. Enter your genre, period, setting, and an optional premise. Every sprint you run afterwards is tailored to this world. The more specific your context, the more useful your research will be." },
+                { title: "2. Run Focused Research Sprints", body: "A sprint is one focused research query on one topic. Specificity produces the best results. Instead of 'Victorian food' try 'Street food and pie sellers in 1880s London'. Each sprint produces a structured research card with five sections designed for fiction writers." },
+                { title: "3. Two Research Modes", body: "Claude's Knowledge (default) is fast and reliable for most historical, cultural, and scientific topics. Live Web Search is slower but useful for very recent events, niche local history, or obscure topics that benefit from current online sources." },
+                { title: "4. Build Up, Then Compile Your Report", body: "Run as many sprints as your novel needs. When you are ready, click Generate Research Report to compile everything into a single formatted document to keep beside you as you write. Copy it to your clipboard with one click and paste it into Scrivener, Notion, or Word." },
+              ].map((section, i) => (
+                <div key={i} style={{ marginBottom: "24px" }}>
+                  <h2 style={{ fontFamily: SERIF, fontSize: "18px", color: C.greenDeep,
+                    marginBottom: "8px", fontWeight: "500" }}>{section.title}</h2>
+                  <p style={{ fontSize: "15px", color: C.textMid, lineHeight: "1.8", fontFamily: SANS }}>{section.body}</p>
+                </div>
+              ))}
+              <div style={{ background: C.resultBg, border: `1px solid #c8e6c9`, borderRadius: RADIUS,
+                padding: "16px 18px", marginTop: "8px", textAlign: "center" }}>
+                <div style={{ fontSize: "12px", color: C.textLight, textTransform: "uppercase",
+                  letterSpacing: "0.08em", marginBottom: "6px", fontFamily: SANS }}>
+                  An AI for Authors Circle Member Tool
+                </div>
+                <div style={{ fontSize: "14px", color: C.textMid, fontFamily: SANS }}>
+                  Questions or feedback? Let us know in the community.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      // ── Setup screen ──────────────────────────────────────────────────
       if (screen === "setup") {
         const canStart = ctx.genre.trim() && ctx.period.trim() && ctx.setting.trim();
         return (
           <div style={{ minHeight: "100vh", background: C.bg }}>
             <Header ctx={ctx} onSignOut={onSignOut} onGuide={() => setShowGuide(true)} showContext={false} />
             <div style={{ maxWidth: "680px", margin: "0 auto", padding: "40px 24px" }}>
-              <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                fontSize: "32px", color: C.green, marginBottom: "8px" }}>
-                Set Your Novel Context
-              </div>
-              <div style={{ fontSize: "17px", color: C.textMid, fontStyle: "italic", marginBottom: "32px" }}>
-                Tell Story Scout about your novel. This shapes every sprint you run.
-              </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
-                {[
-                  { key:"genre",   label:"Genre",                   placeholder:"e.g. Historical Fiction, Crime, Fantasy",              req:true  },
-                  { key:"period",  label:"Period or Era",            placeholder:"e.g. Victorian 1880s, Ancient Rome, 1920s",            req:true  },
-                  { key:"setting", label:"Setting or Location",      placeholder:"e.g. London, rural Tuscany, colonial Boston",          req:true  },
-                  { key:"premise", label:"Brief Premise (optional)", placeholder:"e.g. A surgeon navigating London's criminal underworld", req:false },
-                ].map(f => (
-                  <div key={f.key}>
-                    <label style={{ display: "block", fontSize: "13px", letterSpacing: "0.08em",
-                      textTransform: "uppercase", color: C.textMid, marginBottom: "8px" }}>
-                      {f.label}{f.req ? " *" : ""}
-                    </label>
-                    <input style={inp} placeholder={f.placeholder} value={ctx[f.key]}
-                      onChange={e => setCtx(p => ({ ...p, [f.key]: e.target.value }))} />
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ background: "#e6eeea", border: "1px solid #bad0c2", borderRadius: "3px",
-                padding: "20px 22px", marginBottom: "20px", fontSize: "15px",
-                color: C.textMid, lineHeight: "1.75" }}>
-                <strong style={{ color: C.green, display: "block", marginBottom: "8px" }}>
-                  How Story Scout works
-                </strong>
-                Set your novel context once, then run focused <strong>Research Sprints</strong> on
-                specific topics. Each sprint produces a structured <strong>index card</strong> covering
-                key facts, research questions, authenticity red flags, sensory detail, and sources.
-                When you are ready, compile all your cards into a single <strong>Research Report</strong> to
-                keep beside you as you write.
-              </div>
-
-              <div style={{ background: C.paper, border: `1px solid ${C.border}`, borderRadius: "3px",
-                padding: "18px 20px", marginBottom: "28px" }}>
-                <div style={{ fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase",
-                  color: C.textMid, marginBottom: "14px" }}>Research Mode</div>
-                <Toggle value={useWebSearch} onChange={() => setUseWebSearch(p => !p)} large
-                  labelOn="Live web search on"
-                  labelOff="Use Claude's knowledge (recommended)"
-                  descOn="Each sprint searches the web for current information. Slower but good for recent or obscure topics."
-                  descOff="Fast and reliable for most research. Covers history, culture, science, and more in depth."
-                />
-              </div>
-
-              <button onClick={() => setScreen("research")} disabled={!canStart}
-                style={{ padding: "14px 36px", background: canStart ? C.green : "#a0a0a0",
-                  color: "#fff", border: "none", borderRadius: "3px", fontFamily: "Georgia,serif",
-                  fontSize: "16px", cursor: canStart ? "pointer" : "default", letterSpacing: "0.04em" }}>
-                Begin Research →
-              </button>
-            </div>
-            {/* Guide modal */}
-          {showGuide && (
-            <div onClick={e => e.target === e.currentTarget && setShowGuide(false)}
-              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
-                display: "flex", alignItems: "flex-start", justifyContent: "center",
-                padding: "32px 16px", overflowY: "auto", zIndex: 200 }}>
-              <div style={{ background: C.paper, borderRadius: "4px", padding: "40px",
-                maxWidth: "720px", width: "100%", position: "relative",
-                boxShadow: "0 24px 64px rgba(0,0,0,0.3)", marginBottom: "32px" }}>
-                <button onClick={() => setShowGuide(false)}
-                  style={{ position: "absolute", top: "16px", right: "16px", background: "none",
-                    border: "none", fontSize: "20px", cursor: "pointer",
-                    color: C.textLight, padding: "4px 8px", lineHeight: 1 }}>✕</button>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "32px" }}>🐇</span>
-                  <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "26px", color: C.green }}>Getting Started Guide</div>
+              <div style={{ background: C.green, borderRadius: RADIUS, padding: "40px 32px 36px",
+                boxShadow: SHADOW, marginBottom: "28px", textAlign: "center" }}>
+                <img src="/ai_for_authors_logo_final.png" alt="AI for Authors Circle"
+                  style={{ height: "64px", width: "auto", marginBottom: "20px", display: "block", margin: "0 auto 20px" }} />
+                <div style={{ fontSize: "12px", fontWeight: "600", letterSpacing: "0.12em",
+                  textTransform: "uppercase", color: "rgba(255,255,255,0.85)",
+                  marginBottom: "8px", fontFamily: SANS }}>For Authors</div>
+                <div style={{ fontFamily: SERIF, fontSize: "2rem", fontWeight: "500",
+                  color: "#fff", marginBottom: "12px" }}>Story Scout</div>
+                <div style={{ fontSize: "15px", color: "rgba(255,255,255,0.88)",
+                  maxWidth: "480px", margin: "0 auto", fontFamily: SANS }}>
+                  Tell Story Scout about your novel. Set your context once, then run focused research sprints on any topic.
                 </div>
-                <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic", marginBottom: "24px" }}>
-                  How to get the most from Story Scout
-                </div>
-                <div style={{ borderTop: `1px solid ${C.borderLight}`, paddingTop: "20px" }}>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "0 0 10px", fontWeight: "700" }}>
-                    1. Set Your Novel Context First
-                  </h2>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    The context screen is the foundation of everything Story Scout does for you.
-                    When you enter your <strong>genre</strong>, <strong>period</strong>, <strong>setting</strong>,
-                    and optionally a <strong>brief premise</strong>, you are telling the AI exactly what world
-                    your novel inhabits.
-                  </p>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    Every research sprint you run afterwards is shaped by this context. A question about
-                    "street food" will produce very different results for Victorian London versus 1920s New Orleans.
-                    The more specific your context, the more tailored and useful your research will be.
-                  </p>
-                  <div style={{ background: "#e6eeea", border: "1px solid #bad0c2", borderRadius: "3px",
-                    padding: "14px 16px", margin: "12px 0 20px", fontSize: "14px", color: C.textMid, lineHeight: "1.7" }}>
-                    <strong style={{ color: C.green }}>Tip:</strong> You can change your context at any time
-                    using the "Change Context" button in the header. This is useful if you are researching
-                    multiple novels or different sections of the same book with different settings.
-                  </div>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
-                    2. Run Focused Research Sprints
-                  </h2>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    A sprint is a single, focused research query on one topic. Think of it like sending
-                    a research assistant to the library with one specific question.
-                  </p>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    <strong>The key to great results is specificity.</strong> Instead of broad topics,
-                    narrow your focus:
-                  </p>
-                  <ul style={{ paddingLeft: "20px", margin: "8px 0 12px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    <li style={{ marginBottom: "4px" }}>Instead of "Victorian food" try "Street food and pie sellers in 1880s London"</li>
-                    <li style={{ marginBottom: "4px" }}>Instead of "Medieval weapons" try "Longbow tactics at Agincourt and English archer training"</li>
-                    <li style={{ marginBottom: "4px" }}>Instead of "1920s fashion" try "Women's daywear and department store shopping in 1920s Manhattan"</li>
-                  </ul>
-                  <p style={{ margin: "0 0 12px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    Each sprint produces a structured <strong>research card</strong> containing five sections
-                    designed specifically for fiction writers.
-                  </p>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
-                    3. Understanding Your Research Cards
-                  </h2>
-                  <p style={{ margin: "0 0 10px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    Each card gives you five things:
-                  </p>
-                  <div style={{ display: "grid", gap: "10px", margin: "0 0 16px" }}>
-                    {[
-                      { label: "Key Research Questions", desc: "The questions a thorough author should be able to answer. Use these to guide deeper research or to check your own knowledge." },
-                      { label: "Essential Facts", desc: "Core factual information about the topic, tailored to your novel's period and setting. The facts your story needs to get right." },
-                      { label: "Authenticity Red Flags", desc: "Common mistakes and anachronisms that could break reader trust. These are the errors that knowledgeable readers will notice." },
-                      { label: "Sensory and Atmospheric Detail", desc: "What it looked, sounded, smelled, and felt like. These vivid details bring scenes to life and are hard to invent without research." },
-                      { label: "Sources to Explore", desc: "Books, archives, and resources for deeper investigation when you need to go further." },
-                    ].map((item, i) => (
-                      <div key={i} style={{ background: C.bg, border: `1px solid ${C.borderLight}`,
-                        borderRadius: "3px", padding: "12px 14px" }}>
-                        <div style={{ fontSize: "13px", fontWeight: "700", color: C.amber,
-                          textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
-                          {item.label}
-                        </div>
-                        <div style={{ fontSize: "14px", color: C.textMid, lineHeight: "1.7" }}>
-                          {item.desc}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ background: "#e6eeea", border: "1px solid #bad0c2", borderRadius: "3px",
-                    padding: "14px 16px", margin: "12px 0 20px", fontSize: "14px", color: C.textMid, lineHeight: "1.7" }}>
-                    <strong style={{ color: C.green }}>Tip:</strong> Use the "Copy card" button on any card
-                    to copy its contents to your clipboard, then paste it into your writing notes, Scrivener,
-                    Notion, or wherever you plan your novel.
-                  </div>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
-                    4. Live Web Search vs Claude's Knowledge
-                  </h2>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    You can toggle between two research modes:
-                  </p>
-                  <ul style={{ paddingLeft: "20px", margin: "8px 0 12px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    <li style={{ marginBottom: "6px" }}><strong>Claude's Knowledge (recommended):</strong> Fast and thorough.
-                      Draws on extensive training data covering history, science, culture, geography and more.
-                      Best for most historical and general research topics.</li>
-                    <li style={{ marginBottom: "6px" }}><strong>Live Web Search:</strong> Searches the internet in real time.
-                      Slower, but useful for very recent events, niche local history, or obscure topics
-                      that benefit from current online sources.</li>
-                  </ul>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
-                    5. Build Up, Then Compile Your Report
-                  </h2>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    Run as many sprints as your novel needs. You might run five sprints for a short story
-                    or twenty or more for a complex historical novel. There is no limit.
-                  </p>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    When you are ready, click <strong>"Generate Research Report"</strong> to compile
-                    all your cards into a single, organised document. This report is designed to sit
-                    beside you as you write, a quick-reference companion covering everything you have researched.
-                  </p>
-                  <p style={{ margin: "0 0 12px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    You can copy the entire report to your clipboard with one click.
-                  </p>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
-                    6. A Suggested Workflow
-                  </h2>
-                  <ol style={{ paddingLeft: "20px", margin: "8px 0 16px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    <li style={{ marginBottom: "6px" }}>Set your novel context with as much detail as possible</li>
-                    <li style={{ marginBottom: "6px" }}>List the topics your novel needs you to research</li>
-                    <li style={{ marginBottom: "6px" }}>Run a sprint for each topic, keeping queries focused and specific</li>
-                    <li style={{ marginBottom: "6px" }}>Review each card and note any areas that need deeper investigation</li>
-                    <li style={{ marginBottom: "6px" }}>Run follow-up sprints on any gaps or questions that emerged</li>
-                    <li style={{ marginBottom: "6px" }}>Generate your Research Report and keep it to hand while writing</li>
-                  </ol>
-                  <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: "3px",
-                    padding: "16px 18px", marginTop: "20px", textAlign: "center" }}>
-                    <div style={{ fontSize: "13px", color: C.textLight, textTransform: "uppercase",
-                      letterSpacing: "0.08em", marginBottom: "6px" }}>An AI for Authors Circle Member Tool</div>
-                    <div style={{ fontSize: "14px", color: C.textMid }}>
-                      Questions or feedback? Let us know in the community.
+              </div>
+
+              <div style={{ background: C.paper, border: `1px solid ${C.border}`,
+                borderRadius: RADIUS, boxShadow: SHADOW, padding: "36px", marginBottom: "28px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
+                  {[
+                    { key:"genre",   label:"Genre",                   placeholder:"e.g. Historical Fiction, Crime, Fantasy",               req:true  },
+                    { key:"period",  label:"Period or Era",            placeholder:"e.g. Victorian 1880s, Ancient Rome, 1920s",             req:true  },
+                    { key:"setting", label:"Setting or Location",      placeholder:"e.g. London, rural Tuscany, colonial Boston",           req:true  },
+                    { key:"premise", label:"Brief Premise (optional)", placeholder:"e.g. A surgeon navigating London's criminal underworld", req:false },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label style={{ display: "block", fontSize: "14px", fontWeight: "600",
+                        color: C.text, marginBottom: "6px", fontFamily: SANS }}>
+                        {f.label}{f.req ? " *" : ""}
+                      </label>
+                      <input style={inp} placeholder={f.placeholder} value={ctx[f.key]}
+                        onChange={e => setCtx(p => ({ ...p, [f.key]: e.target.value }))} />
                     </div>
-                  </div>
+                  ))}
                 </div>
+
+                <div style={{ background: C.resultBg, border: "1px solid #c8e6c9", borderRadius: RADIUS,
+                  padding: "18px 20px", marginBottom: "20px", fontSize: "15px",
+                  color: C.textMid, lineHeight: "1.75", fontFamily: SANS }}>
+                  <strong style={{ color: C.greenDeep, display: "block", marginBottom: "8px", fontFamily: SERIF, fontWeight: "500" }}>
+                    How Story Scout works
+                  </strong>
+                  Set your novel context once, then run focused <strong>Research Sprints</strong> on specific topics.
+                  Each sprint produces a structured <strong>index card</strong> covering key facts, research questions,
+                  authenticity red flags, sensory detail, and sources. When you are ready, compile all your cards into
+                  a single <strong>Research Report</strong> to keep beside you as you write.
+                </div>
+
+                <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: RADIUS,
+                  padding: "18px 20px", marginBottom: "28px" }}>
+                  <div style={{ fontSize: "12px", letterSpacing: "0.08em", textTransform: "uppercase",
+                    color: C.textLight, marginBottom: "14px", fontFamily: SANS, fontWeight: "600" }}>
+                    Research Mode
+                  </div>
+                  <Toggle value={useWebSearch} onChange={() => setUseWebSearch(p => !p)} large
+                    labelOn="Live web search on"
+                    labelOff="Use Claude's knowledge (recommended)"
+                    descOn="Each sprint searches the web for current information. Slower but good for recent or obscure topics."
+                    descOff="Fast and reliable for most research. Covers history, culture, science, and more in depth."
+                  />
+                </div>
+
+                <button onClick={() => setScreen("research")} disabled={!canStart}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "8px",
+                    padding: "13px 28px", background: canStart ? C.green : "#a5d6a7",
+                    color: "#fff", border: "none", borderRadius: RADIUS, fontFamily: SANS,
+                    fontSize: "15px", fontWeight: "600", cursor: canStart ? "pointer" : "default" }}>
+                  Begin Research →
+                </button>
               </div>
             </div>
-          )}
+            {guideModal}
           </div>
         );
       }
 
-      // ── Research screen ──────────────────────────────────────────────────
+      // ── Research screen ───────────────────────────────────────────────
       return (
         <div style={{ minHeight: "100vh", background: C.bg }}>
-          <Header ctx={ctx} onChangeContext={() => setScreen("setup")} onGuide={() => setShowGuide(true)}
-            onSignOut={onSignOut} showContext={true} />
+          <Header ctx={ctx} onChangeContext={() => setScreen("setup")}
+            onGuide={() => setShowGuide(true)} onSignOut={onSignOut} showContext={true} />
 
           <div style={{ maxWidth: "920px", margin: "0 auto", padding: "28px 20px" }}>
 
-            {/* Sprint input panel */}
-            <div style={{ background: C.paper, border: `1px solid ${C.border}`, borderRadius: "4px",
-              padding: "24px", marginBottom: "28px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                fontSize: "20px", color: C.green, marginBottom: "6px" }}>
-                Run a Research Sprint
-              </div>
-              <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic", marginBottom: "14px" }}>
+            <div style={{ background: C.paper, border: `1px solid ${C.border}`, borderRadius: RADIUS,
+              padding: "28px", marginBottom: "28px", boxShadow: SHADOW }}>
+              <div style={{ fontFamily: SERIF, fontSize: "20px", color: C.greenDeep,
+                marginBottom: "6px", fontWeight: "500" }}>Run a Research Sprint</div>
+              <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic",
+                marginBottom: "14px", fontFamily: SANS }}>
                 Enter one focused topic per sprint. The more specific, the richer the card.
               </div>
-              <div style={{ fontSize: "13px", color: C.textLight, marginBottom: "16px", lineHeight: 1.7 }}>
+              <div style={{ fontSize: "13px", color: C.textLight, marginBottom: "16px",
+                lineHeight: 1.7, fontFamily: SANS }}>
                 <strong style={{ color: C.textMid }}>Examples:</strong>{" "}
-                "Victorian street markets and trading customs, 1880s" · "Medieval siege warfare and
-                castle defences" · "1920s jazz clubs in Harlem" · "Roman legionary daily routine and kit"
+                "Victorian street markets and trading customs, 1880s" · "Medieval siege warfare and castle defences" ·
+                "1920s jazz clubs in Harlem" · "Roman legionary daily routine and kit"
               </div>
               <div style={{ display: "flex", gap: "10px", marginBottom: "14px" }}>
                 <input
-                  style={{ flex: 1, padding: "12px 15px", border: `1px solid ${C.border}`,
-                    borderRadius: "3px", fontFamily: "Georgia,serif", fontSize: "15px",
+                  style={{ flex: 1, padding: "12px 14px", border: `1px solid ${C.border}`,
+                    borderRadius: RADIUS, fontFamily: SANS, fontSize: "15px",
                     color: C.text, background: C.bg }}
                   placeholder="e.g. Victorian street medicine and travelling apothecaries, 1870s…"
                   value={sprintTopic}
@@ -726,9 +615,9 @@
                   disabled={loading}
                 />
                 <button onClick={runSprint} disabled={loading || !sprintTopic.trim()}
-                  style={{ padding: "12px 22px", border: "none", borderRadius: "3px",
-                    background: loading || !sprintTopic.trim() ? "#8aaa96" : C.green,
-                    color: "#fff", fontFamily: "Georgia,serif", fontSize: "15px",
+                  style={{ padding: "12px 22px", border: "none", borderRadius: RADIUS,
+                    background: loading || !sprintTopic.trim() ? "#a5d6a7" : C.green,
+                    color: "#fff", fontFamily: SANS, fontSize: "15px", fontWeight: "600",
                     cursor: loading || !sprintTopic.trim() ? "default" : "pointer",
                     whiteSpace: "nowrap", minWidth: "140px" }}>
                   {loading ? (useWebSearch ? "Searching…" : "Researching…") : "Run Sprint →"}
@@ -739,92 +628,98 @@
                 labelOff="Live web search off — faster, uses Claude's knowledge"
               />
               {err && (
-                <div style={{ color: C.red, fontSize: "14px", fontStyle: "italic", marginTop: "12px" }}>
+                <div style={{ color: C.red, fontSize: "14px", marginTop: "12px",
+                  fontFamily: SANS, background: C.flagBg, padding: "10px 14px",
+                  borderRadius: RADIUS, border: "1px solid #f0b8b0" }}>
                   {err}
                 </div>
               )}
             </div>
 
-            {/* Sprint cards */}
             {sprints.length > 0 ? (
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
                   marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
                   <div>
-                    <span style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                      fontSize: "20px", color: C.green }}>Research Cards</span>
-                    <span style={{ marginLeft: "12px", fontSize: "13px", color: C.textLight, fontStyle: "italic" }}>
+                    <span style={{ fontFamily: SERIF, fontSize: "20px", color: C.greenDeep, fontWeight: "500" }}>
+                      Research Cards
+                    </span>
+                    <span style={{ marginLeft: "12px", fontSize: "13px", color: C.textLight,
+                      fontStyle: "italic", fontFamily: SANS }}>
                       {sprints.length} sprint{sprints.length !== 1 ? "s" : ""} completed
                     </span>
                   </div>
                   <button onClick={generateSummary} disabled={summaryLoading}
-                    style={{ padding: "11px 20px", border: "none", borderRadius: "3px",
-                      background: summaryLoading ? "#c0955a" : C.amber,
-                      color: "#fff", fontFamily: "Georgia,serif", fontSize: "14px",
+                    style={{ padding: "11px 22px", border: "none", borderRadius: RADIUS,
+                      background: summaryLoading ? "#a5d6a7" : C.green,
+                      color: "#fff", fontFamily: SANS, fontSize: "14px", fontWeight: "600",
                       cursor: summaryLoading ? "default" : "pointer" }}>
                     {summaryLoading ? "Compiling report…" : "📄 Generate Research Report"}
                   </button>
                 </div>
 
-                <div style={{ display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "20px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "20px" }}>
                   {[...sprints].reverse().map((sprint, i) => (
                     <div key={sprint.id} className={i === 0 ? "sprint-card" : ""}
-                      style={{ background: C.card, border: `1px solid ${C.borderLight}`,
-                        borderTop: `3px solid ${C.green}`, borderRadius: "3px",
-                        padding: "22px", boxShadow: "0 3px 12px rgba(0,0,0,0.06)" }}>
+                      style={{ background: C.card, border: `1px solid ${C.border}`,
+                        borderTop: `3px solid ${C.green}`, borderRadius: RADIUS,
+                        padding: "22px", boxShadow: SHADOW }}>
                       <div style={{ display: "flex", alignItems: "flex-start",
                         justifyContent: "space-between", gap: "10px", marginBottom: "4px" }}>
-                        <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                          fontSize: "18px", fontWeight: "700", color: C.green, lineHeight: 1.3 }}>
+                        <div style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: "500",
+                          color: C.greenDeep, lineHeight: 1.3 }}>
                           {sprint.data.title}
                         </div>
                         <button onClick={() => copyCard(sprint)}
-                          style={{ flexShrink: 0, padding: "5px 12px", border: "none", borderRadius: "3px",
-                            background: cardCopied === sprint.id ? "#2d7a4f" : C.amber,
-                            color: "#fff", fontFamily: "Georgia,serif", fontSize: "12px",
-                            cursor: "pointer", transition: "background 0.2s", whiteSpace: "nowrap" }}>
+                          style={{ flexShrink: 0, padding: "5px 12px", border: `1px solid ${C.green}`,
+                            borderRadius: "6px", background: cardCopied === sprint.id ? C.green : "none",
+                            color: cardCopied === sprint.id ? "#fff" : C.green,
+                            fontFamily: SANS, fontSize: "12px", fontWeight: "600",
+                            cursor: "pointer", transition: "background 0.2s, color 0.2s", whiteSpace: "nowrap" }}>
                           {cardCopied === sprint.id ? "✓ Copied" : "Copy card"}
                         </button>
                       </div>
-                      <div style={{ fontSize: "12px", color: C.textLight, fontStyle: "italic", marginBottom: "6px" }}>
+                      <div style={{ fontSize: "12px", color: C.textLight, fontStyle: "italic",
+                        marginBottom: "6px", fontFamily: SANS }}>
                         {sprint.webSearched ? "🌐 Web search · " : ""}Sprint at {sprint.time}
                       </div>
 
-                      <SectionBlock label="Key Research Questions" color={C.amber}>
+                      <SectionBlock label="Key Research Questions" color={C.greenDark}>
                         <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "15px",
-                          color: C.textMid, lineHeight: "1.8" }}>
+                          color: C.textMid, lineHeight: "1.8", fontFamily: SANS }}>
                           {sprint.data.keyQuestions.map((q, j) => (
                             <li key={j} style={{ marginBottom: "4px" }}>{q}</li>
                           ))}
                         </ul>
                       </SectionBlock>
 
-                      <SectionBlock label="Essential Facts" color={C.amber}>
-                        <p style={{ margin: 0, fontSize: "15px", color: C.textMid, lineHeight: "1.75" }}>
+                      <SectionBlock label="Essential Facts" color={C.greenDark}>
+                        <p style={{ margin: 0, fontSize: "15px", color: C.textMid,
+                          lineHeight: "1.75", fontFamily: SANS }}>
                           {sprint.data.essentialFacts}
                         </p>
                       </SectionBlock>
 
                       <SectionBlock label="Authenticity Red Flags" color={C.red}>
                         <ul style={{ margin: 0, fontSize: "15px", color: C.red, lineHeight: "1.8",
-                          background: C.flagBg, padding: "10px 12px 10px 30px", borderRadius: "3px" }}>
+                          background: C.flagBg, padding: "10px 12px 10px 30px",
+                          borderRadius: RADIUS, fontFamily: SANS }}>
                           {sprint.data.authenticityFlags.map((f, j) => (
                             <li key={j} style={{ marginBottom: "4px" }}>{f}</li>
                           ))}
                         </ul>
                       </SectionBlock>
 
-                      <SectionBlock label="Sensory and Atmospheric Detail" color={C.amber}>
+                      <SectionBlock label="Sensory and Atmospheric Detail" color={C.greenDark}>
                         <p style={{ margin: 0, fontSize: "15px", color: C.textMid,
-                          lineHeight: "1.75", fontStyle: "italic" }}>
+                          lineHeight: "1.75", fontStyle: "italic", fontFamily: SANS }}>
                           {sprint.data.sensoryDetails}
                         </p>
                       </SectionBlock>
 
-                      <SectionBlock label="Sources to Explore" color={C.amber}>
+                      <SectionBlock label="Sources to Explore" color={C.greenDark}>
                         <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "14px",
-                          color: C.textMid, lineHeight: "1.85" }}>
+                          color: C.textMid, lineHeight: "1.85", fontFamily: SANS }}>
                           {sprint.data.sources.map((src, j) => (
                             <li key={j} style={{ marginBottom: "4px" }}>{src}</li>
                           ))}
@@ -836,11 +731,12 @@
               </>
             ) : (
               <div style={{ textAlign: "center", padding: "72px 24px", color: C.textLight }}>
-                <div style={{ fontSize: "48px", marginBottom: "16px" }}>🐇</div>
-                <div style={{ fontSize: "17px", fontStyle: "italic", marginBottom: "10px" }}>
+                <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔍</div>
+                <div style={{ fontSize: "17px", fontStyle: "italic", marginBottom: "10px",
+                  fontFamily: SERIF, color: C.textMid }}>
                   Run your first sprint above to start building your research cards.
                 </div>
-                <div style={{ fontSize: "15px" }}>
+                <div style={{ fontSize: "15px", fontFamily: SANS }}>
                   Each card covers one focused topic. Build as many as your novel needs,
                   then compile them into a Research Report.
                 </div>
@@ -848,204 +744,54 @@
             )}
           </div>
 
-                    {/* Guide modal */}
-          {showGuide && (
-            <div onClick={e => e.target === e.currentTarget && setShowGuide(false)}
-              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
-                display: "flex", alignItems: "flex-start", justifyContent: "center",
-                padding: "32px 16px", overflowY: "auto", zIndex: 200 }}>
-              <div style={{ background: C.paper, borderRadius: "4px", padding: "40px",
-                maxWidth: "720px", width: "100%", position: "relative",
-                boxShadow: "0 24px 64px rgba(0,0,0,0.3)", marginBottom: "32px" }}>
-                <button onClick={() => setShowGuide(false)}
-                  style={{ position: "absolute", top: "16px", right: "16px", background: "none",
-                    border: "none", fontSize: "20px", cursor: "pointer",
-                    color: C.textLight, padding: "4px 8px", lineHeight: 1 }}>✕</button>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "32px" }}>🐇</span>
-                  <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "26px", color: C.green }}>Getting Started Guide</div>
-                </div>
-                <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic", marginBottom: "24px" }}>
-                  How to get the most from Story Scout
-                </div>
-                <div style={{ borderTop: `1px solid ${C.borderLight}`, paddingTop: "20px" }}>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "0 0 10px", fontWeight: "700" }}>
-                    1. Set Your Novel Context First
-                  </h2>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    The context screen is the foundation of everything Story Scout does for you.
-                    When you enter your <strong>genre</strong>, <strong>period</strong>, <strong>setting</strong>,
-                    and optionally a <strong>brief premise</strong>, you are telling the AI exactly what world
-                    your novel inhabits.
-                  </p>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    Every research sprint you run afterwards is shaped by this context. A question about
-                    "street food" will produce very different results for Victorian London versus 1920s New Orleans.
-                    The more specific your context, the more tailored and useful your research will be.
-                  </p>
-                  <div style={{ background: "#e6eeea", border: "1px solid #bad0c2", borderRadius: "3px",
-                    padding: "14px 16px", margin: "12px 0 20px", fontSize: "14px", color: C.textMid, lineHeight: "1.7" }}>
-                    <strong style={{ color: C.green }}>Tip:</strong> You can change your context at any time
-                    using the "Change Context" button in the header. This is useful if you are researching
-                    multiple novels or different sections of the same book with different settings.
-                  </div>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
-                    2. Run Focused Research Sprints
-                  </h2>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    A sprint is a single, focused research query on one topic. Think of it like sending
-                    a research assistant to the library with one specific question.
-                  </p>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    <strong>The key to great results is specificity.</strong> Instead of broad topics,
-                    narrow your focus:
-                  </p>
-                  <ul style={{ paddingLeft: "20px", margin: "8px 0 12px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    <li style={{ marginBottom: "4px" }}>Instead of "Victorian food" try "Street food and pie sellers in 1880s London"</li>
-                    <li style={{ marginBottom: "4px" }}>Instead of "Medieval weapons" try "Longbow tactics at Agincourt and English archer training"</li>
-                    <li style={{ marginBottom: "4px" }}>Instead of "1920s fashion" try "Women's daywear and department store shopping in 1920s Manhattan"</li>
-                  </ul>
-                  <p style={{ margin: "0 0 12px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    Each sprint produces a structured <strong>research card</strong> containing five sections
-                    designed specifically for fiction writers.
-                  </p>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
-                    3. Understanding Your Research Cards
-                  </h2>
-                  <p style={{ margin: "0 0 10px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    Each card gives you five things:
-                  </p>
-                  <div style={{ display: "grid", gap: "10px", margin: "0 0 16px" }}>
-                    {[
-                      { label: "Key Research Questions", desc: "The questions a thorough author should be able to answer. Use these to guide deeper research or to check your own knowledge." },
-                      { label: "Essential Facts", desc: "Core factual information about the topic, tailored to your novel's period and setting. The facts your story needs to get right." },
-                      { label: "Authenticity Red Flags", desc: "Common mistakes and anachronisms that could break reader trust. These are the errors that knowledgeable readers will notice." },
-                      { label: "Sensory and Atmospheric Detail", desc: "What it looked, sounded, smelled, and felt like. These vivid details bring scenes to life and are hard to invent without research." },
-                      { label: "Sources to Explore", desc: "Books, archives, and resources for deeper investigation when you need to go further." },
-                    ].map((item, i) => (
-                      <div key={i} style={{ background: C.bg, border: `1px solid ${C.borderLight}`,
-                        borderRadius: "3px", padding: "12px 14px" }}>
-                        <div style={{ fontSize: "13px", fontWeight: "700", color: C.amber,
-                          textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
-                          {item.label}
-                        </div>
-                        <div style={{ fontSize: "14px", color: C.textMid, lineHeight: "1.7" }}>
-                          {item.desc}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ background: "#e6eeea", border: "1px solid #bad0c2", borderRadius: "3px",
-                    padding: "14px 16px", margin: "12px 0 20px", fontSize: "14px", color: C.textMid, lineHeight: "1.7" }}>
-                    <strong style={{ color: C.green }}>Tip:</strong> Use the "Copy card" button on any card
-                    to copy its contents to your clipboard, then paste it into your writing notes, Scrivener,
-                    Notion, or wherever you plan your novel.
-                  </div>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
-                    4. Live Web Search vs Claude's Knowledge
-                  </h2>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    You can toggle between two research modes:
-                  </p>
-                  <ul style={{ paddingLeft: "20px", margin: "8px 0 12px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    <li style={{ marginBottom: "6px" }}><strong>Claude's Knowledge (recommended):</strong> Fast and thorough.
-                      Draws on extensive training data covering history, science, culture, geography and more.
-                      Best for most historical and general research topics.</li>
-                    <li style={{ marginBottom: "6px" }}><strong>Live Web Search:</strong> Searches the internet in real time.
-                      Slower, but useful for very recent events, niche local history, or obscure topics
-                      that benefit from current online sources.</li>
-                  </ul>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
-                    5. Build Up, Then Compile Your Report
-                  </h2>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    Run as many sprints as your novel needs. You might run five sprints for a short story
-                    or twenty or more for a complex historical novel. There is no limit.
-                  </p>
-                  <p style={{ margin: "0 0 8px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    When you are ready, click <strong>"Generate Research Report"</strong> to compile
-                    all your cards into a single, organised document. This report is designed to sit
-                    beside you as you write, a quick-reference companion covering everything you have researched.
-                  </p>
-                  <p style={{ margin: "0 0 12px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    You can copy the entire report to your clipboard with one click.
-                  </p>
-                  <h2 style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                    fontSize: "20px", color: C.green, margin: "24px 0 10px", fontWeight: "700" }}>
-                    6. A Suggested Workflow
-                  </h2>
-                  <ol style={{ paddingLeft: "20px", margin: "8px 0 16px", fontSize: "15px", color: C.textMid, lineHeight: "1.8" }}>
-                    <li style={{ marginBottom: "6px" }}>Set your novel context with as much detail as possible</li>
-                    <li style={{ marginBottom: "6px" }}>List the topics your novel needs you to research</li>
-                    <li style={{ marginBottom: "6px" }}>Run a sprint for each topic, keeping queries focused and specific</li>
-                    <li style={{ marginBottom: "6px" }}>Review each card and note any areas that need deeper investigation</li>
-                    <li style={{ marginBottom: "6px" }}>Run follow-up sprints on any gaps or questions that emerged</li>
-                    <li style={{ marginBottom: "6px" }}>Generate your Research Report and keep it to hand while writing</li>
-                  </ol>
-                  <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: "3px",
-                    padding: "16px 18px", marginTop: "20px", textAlign: "center" }}>
-                    <div style={{ fontSize: "13px", color: C.textLight, textTransform: "uppercase",
-                      letterSpacing: "0.08em", marginBottom: "6px" }}>An AI for Authors Circle Member Tool</div>
-                    <div style={{ fontSize: "14px", color: C.textMid }}>
-                      Questions or feedback? Let us know in the community.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          {/* Research Report modal */}
+          {guideModal}
+
           {showSummary && (
             <div onClick={e => e.target === e.currentTarget && setShowSummary(false)}
-              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
                 display: "flex", alignItems: "flex-start", justifyContent: "center",
                 padding: "32px 16px", overflowY: "auto", zIndex: 200 }}>
-              <div style={{ background: C.paper, borderRadius: "4px", padding: "40px",
+              <div style={{ background: C.paper, borderRadius: RADIUS, padding: "40px",
                 maxWidth: "720px", width: "100%", position: "relative",
-                boxShadow: "0 24px 64px rgba(0,0,0,0.3)", marginBottom: "32px" }}>
+                boxShadow: "0 24px 64px rgba(0,0,0,0.2)", marginBottom: "32px",
+                border: `1px solid ${C.border}` }}>
                 <button onClick={() => setShowSummary(false)}
                   style={{ position: "absolute", top: "16px", right: "16px", background: "none",
                     border: "none", fontSize: "20px", cursor: "pointer",
                     color: C.textLight, padding: "4px 8px", lineHeight: 1 }}>✕</button>
-                <div style={{ fontFamily: "Palatino Linotype,Palatino,Georgia,serif",
-                  fontSize: "26px", color: C.green, marginBottom: "4px" }}>Research Report</div>
-                <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic", marginBottom: "20px" }}>
+                <div style={{ fontFamily: SERIF, fontSize: "26px", color: C.greenDeep,
+                  marginBottom: "4px", fontWeight: "500" }}>Research Report</div>
+                <div style={{ fontSize: "14px", color: C.textLight, fontStyle: "italic",
+                  marginBottom: "20px", fontFamily: SANS }}>
                   {ctx.genre} · {ctx.period} · {ctx.setting} · {sprints.length} sprint{sprints.length !== 1 ? "s" : ""}
                 </div>
                 <button onClick={copyReport}
-                  style={{ width: "100%", padding: "12px", border: "none", borderRadius: "3px",
-                    background: reportCopied ? "#2d7a4f" : C.amber, color: "#fff",
-                    fontFamily: "Georgia,serif", fontSize: "15px", cursor: "pointer",
-                    marginBottom: "24px", transition: "background 0.2s" }}>
+                  style={{ width: "100%", padding: "12px", border: "none", borderRadius: RADIUS,
+                    background: reportCopied ? C.greenDark : C.green, color: "#fff",
+                    fontFamily: SANS, fontSize: "15px", fontWeight: "600",
+                    cursor: "pointer", marginBottom: "24px", transition: "background 0.2s" }}>
                   {reportCopied ? "✓ Copied to clipboard" : "Copy Report to Clipboard"}
                 </button>
-                <div style={{ borderTop: `1px solid ${C.borderLight}`, paddingTop: "20px" }}>
+                <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: "20px" }}>
                   <RenderMarkdown text={summary} />
                 </div>
               </div>
             </div>
           )}
+
+          <footer style={{ textAlign: "center", padding: "32px 20px 48px",
+            fontSize: "13px", color: C.textLight, fontFamily: SANS }}>
+            Story Scout for Authors &nbsp;·&nbsp; AI for Authors Circle
+          </footer>
         </div>
       );
     }
 
-    // ── Root App ──────────────────────────────────────────────────────────────
+    // ── Root App ──────────────────────────────────────────────────────────
     function App() {
       const [authenticated, setAuthenticated] = useState(() => !!getSession());
-
-      if (!authenticated) {
-        return <AuthGate />;
-      }
-
-      return (
-        <StoryScout onSignOut={() => { clearSession(); setAuthenticated(false); }} />
-      );
+      if (!authenticated) return <AuthGate />;
+      return <ResearchRabbit onSignOut={() => { clearSession(); setAuthenticated(false); }} />;
     }
 
     const root = ReactDOM.createRoot(document.getElementById("root"));

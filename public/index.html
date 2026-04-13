@@ -53,7 +53,7 @@
       green:       "#4CAF50",
       greenDark:   "#388E3C",
       greenDeep:   "#2e7d32",
-      amber:       "#4CAF50",   // unified to PA accent
+      amber:       "#4CAF50",
       text:        "#1a1a1a",
       textMid:     "#444444",
       textLight:   "#666666",
@@ -95,30 +95,30 @@
       return data;
     }
 
-    // ── Auth Gate ─────────────────────────────────────────────────────────
-    function AuthGate() {
-      const [email,   setEmail]   = useState("");
-      const [sent,    setSent]    = useState(false);
+    // ── Access Code Gate ──────────────────────────────────────────────────
+    function AuthGate({ onAuthenticated }) {
+      const [code,    setCode]    = useState("");
       const [loading, setLoading] = useState(false);
       const [error,   setError]   = useState("");
 
-      const linkExpired =
-        new URLSearchParams(window.location.search).get("auth_error") === "link_expired";
-
-      const requestLink = async () => {
-        if (!email.trim() || loading) return;
+      const checkCode = async () => {
+        if (!code.trim() || loading) return;
         setLoading(true); setError("");
         try {
-          const res  = await fetch("/api/auth/request", {
+          const res  = await fetch("/api/auth", {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ email }),
+            body:    JSON.stringify({ password: code }),
           });
           const data = await res.json();
-          if (data.ok) { setSent(true); }
-          else { setError("Something went wrong. Please try again."); }
+          if (res.ok && data.ok) {
+            localStorage.setItem(SESSION_KEY, "authenticated");
+            onAuthenticated();
+          } else {
+            setError(data.error || "Incorrect code. Please try again.");
+          }
         } catch {
-          setError("Something went wrong. Please try again.");
+          setError("Could not connect to the server. Please try again.");
         } finally {
           setLoading(false);
         }
@@ -139,28 +139,6 @@
         color: C.text, background: C.bg, marginBottom: "16px",
       };
 
-      if (sent) return (
-        <div style={gateWrap}>
-          <div className="fade-up" style={card}>
-            <img src="/ai_for_authors_logo_final.png" alt="AI for Authors Circle"
-              style={{ height: "56px", width: "auto", marginBottom: "20px" }} />
-            <div style={{ fontSize: "40px", marginBottom: "16px" }}>📬</div>
-            <div style={{ fontFamily: SERIF, fontSize: "1.2rem", fontWeight: "500",
-              color: C.text, marginBottom: "10px" }}>Check your email</div>
-            <div style={{ fontSize: "14px", color: C.textLight, lineHeight: "1.6", marginBottom: "24px" }}>
-              We sent a sign-in link to <strong style={{ color: C.text }}>{email}</strong>.<br />
-              It expires in 15 minutes. Check your spam folder if you don't see it.
-            </div>
-            <button onClick={() => { setSent(false); setEmail(""); }}
-              style={{ fontSize: "13px", color: C.textLight, background: "none",
-                border: "none", cursor: "pointer", textDecoration: "underline",
-                fontFamily: SANS }}>
-              Use a different email
-            </button>
-          </div>
-        </div>
-      );
-
       return (
         <div style={gateWrap}>
           <div className="fade-up" style={card}>
@@ -169,16 +147,8 @@
             <div style={{ fontFamily: SERIF, fontSize: "1.3rem", fontWeight: "500",
               color: C.text, marginBottom: "6px" }}>Story Scout</div>
             <div style={{ fontSize: "14px", color: C.textLight, marginBottom: "28px" }}>
-              Enter your email to receive a sign-in link.
+              Enter your AIFAC access code to continue.
             </div>
-
-            {linkExpired && (
-              <div style={{ background: C.flagBg, border: "1px solid #f0b8b0", borderRadius: RADIUS,
-                padding: "10px 14px", marginBottom: "16px", fontSize: "14px",
-                color: C.red, textAlign: "left" }}>
-                Your sign-in link has expired. Please request a new one below.
-              </div>
-            )}
 
             {error && (
               <div style={{ background: C.flagBg, border: "1px solid #f0b8b0", borderRadius: RADIUS,
@@ -191,21 +161,22 @@
             <div style={{ textAlign: "left", marginBottom: "0" }}>
               <label style={{ display: "block", fontSize: "14px", fontWeight: "600",
                 color: C.text, marginBottom: "6px", fontFamily: SANS }}>
-                Email address
+                Access code
               </label>
-              <input style={inp} type="email" placeholder="you@example.com"
-                value={email}
-                onChange={e => { setEmail(e.target.value); setError(""); }}
-                onKeyDown={e => e.key === "Enter" && requestLink()}
+              <input style={inp} type="password" placeholder="Enter your access code"
+                value={code}
+                onChange={e => { setCode(e.target.value); setError(""); }}
+                onKeyDown={e => e.key === "Enter" && checkCode()}
+                autoComplete="off"
               />
             </div>
 
-            <button onClick={requestLink} disabled={loading || !email.trim()}
+            <button onClick={checkCode} disabled={loading || !code.trim()}
               style={{ width: "100%", padding: "13px 28px", borderRadius: RADIUS, border: "none",
-                background: loading || !email.trim() ? "#a5d6a7" : C.green,
+                background: loading || !code.trim() ? "#a5d6a7" : C.green,
                 color: "#fff", fontFamily: SANS, fontSize: "15px", fontWeight: "600",
-                cursor: loading || !email.trim() ? "default" : "pointer" }}>
-              {loading ? "Sending link…" : "Send me a link"}
+                cursor: loading || !code.trim() ? "default" : "pointer" }}>
+              {loading ? "Checking…" : "Unlock"}
             </button>
 
             <div style={{ marginTop: "24px", fontSize: "11px", color: C.textLight,
@@ -790,7 +761,7 @@
     // ── Root App ──────────────────────────────────────────────────────────
     function App() {
       const [authenticated, setAuthenticated] = useState(() => !!getSession());
-      if (!authenticated) return <AuthGate />;
+      if (!authenticated) return <AuthGate onAuthenticated={() => setAuthenticated(true)} />;
       return <ResearchRabbit onSignOut={() => { clearSession(); setAuthenticated(false); }} />;
     }
 
